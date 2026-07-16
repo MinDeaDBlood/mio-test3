@@ -28,6 +28,8 @@ PYINSTALLER_HIDDEN_IMPORTS = [
 ]
 PYINSTALLER_EXCLUDES = ['numpy']
 ICON_PATH = Path('icon.ico')
+STARTUP_SPLASH_PATH = Path('splash.png')
+LOONGARCH_SPLASH_PATH = Path('splash_loongarch.png')
 RUNTIME_DIRECTORIES = (
     'logs',
     'plugins/installed',
@@ -115,43 +117,18 @@ def resolve_artifact_name(
     raise ValueError(f'Unsupported platform: {ostype}')
 
 
-def build_source_data_args(source_root: str = 'src') -> list[str]:
-    data_args: list[str] = []
-    if not os.path.isdir(source_root):
-        return data_args
-    for root, _, files in os.walk(source_root):
-        for file_name in files:
-            if not file_name.endswith('.py'):
-                continue
-            file_path = os.path.join(root, file_name)
-            data_args.extend(
-                ['--add-data', f'{os.path.abspath(file_path)}{os.pathsep}{root}']
-            )
-    return data_args
-
-
-def _splash_path(ostype: str, machine_name: str) -> Optional[str]:
-    if ostype == 'Darwin':
-        return None
-    splash_name = (
-        'splash_loongarch.png'
-        if ostype == 'Linux' and machine_name.lower() == 'loongarch64'
-        else 'splash.png'
-    )
-    splash_path = Path(splash_name)
-    return str(splash_path.resolve()) if splash_path.is_file() else None
+def _startup_splash_path(ostype: str, machine: str) -> Path:
+    if ostype == 'Linux' and machine.lower() == 'loongarch64':
+        return LOONGARCH_SPLASH_PATH.resolve()
+    return STARTUP_SPLASH_PATH.resolve()
 
 
 def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> list[str]:
     machine_name = machine or platform.machine()
-    bundle_mode = (
-        ['--onedir', '--windowed']
-        if ostype == 'Darwin'
-        else ['--onefile', '--windowed']
-    )
     args = [
         'tool.py',
-        *bundle_mode,
+        '--onedir',
+        '--windowed',
         '--clean',
         '--noconfirm',
         '--specpath',
@@ -160,6 +137,8 @@ def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> list[s
         'tool',
         '--icon',
         str(ICON_PATH.resolve()),
+        '--add-data',
+        f'{_startup_splash_path(ostype, machine_name)}{os.pathsep}.',
         '--collect-data',
         'sv_ttk',
         '--collect-data',
@@ -173,10 +152,6 @@ def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> list[s
         args.extend(['--hidden-import', hidden_import])
     for excluded_module in PYINSTALLER_EXCLUDES:
         args.extend(['--exclude-module', excluded_module])
-    splash_path = _splash_path(ostype, machine_name)
-    if splash_path is not None:
-        args.extend(['--splash', splash_path])
-    args.extend(build_source_data_args('src'))
     return args
 
 
@@ -266,7 +241,9 @@ class Builder:
         self.clean_build_directories()
         self.pyinstaller_build()
         self.config_folder()
-        self.pack_zip(self.local / 'dist', self.name)
+        release_root = self.release_root()
+        self.validate_release_tree(release_root)
+        self.pack_zip(release_root, self.name)
 
     def validate_sources(self) -> None:
         required = [
@@ -278,10 +255,7 @@ class Builder:
             Path('bin/tkdnd') / self.dndplat,
             _platform_binary_path(self.ostype, self.machine),
         ]
-        if self.ostype != 'Darwin':
-            splash_path = _splash_path(self.ostype, self.machine)
-            if splash_path is None:
-                required.append(Path('splash.png'))
+        required.append(_startup_splash_path(self.ostype, self.machine))
         missing = [str(path) for path in required if not path.exists()]
         if missing:
             raise FileNotFoundError('Missing required build resources: ' + ', '.join(missing))
@@ -347,41 +321,100 @@ class Builder:
             build_pyinstaller_args(self.ostype, self.machine)
         )
 
+    def release_root(self) -> Path:
+        dist = Path(self.local) / 'dist'
+        if self.ostype == 'Darwin':
+            return dist
+        return dist / 'tool'
+
+    def _executable_path(self, release_root: Path) -> Path:
+        if self.ostype == 'Windows':
+            return release_root / 'tool.exe'
+        if self.ostype == 'Darwin':
+            return release_root / 'tool.app' / 'Contents' / 'MacOS' / 'tool'
+        return release_root / 'tool'
+
+    def validate_release_tree(self, release_root: Path) -> None:
+        executable = self._executable_path(release_root)
+        missing: list[str] = []
+        if not executable.is_file():
+            missing.append(str(executable))
+        if self.ostype != 'Darwin' and not (release_root / '_internal').is_dir():
+            missing.append(str(release_root / '_internal'))
+        for relative_dir in RUNTIME_DIRECTORIES:
+            if not (release_root / relative_dir).is_dir():
+                missing.append(str(release_root / relative_dir))
+
+        platform_relative = _platform_binary_path(self.ostype, self.machine)
+        source_platform = Path(self.local) / platform_relative
+        destination_platform = release_root / platform_relative
+        for source_file in source_platform.rglob('*'):
+            if not source_file.is_file():
+                continue
+            relative = source_file.relative_to(source_platform)
+            destination_file = destination_platform / relative
+            if not destination_file.is_file():
+                missing.append(str(destination_file))
+            elif destination_file.stat().st_size != source_file.stat().st_size:
+                raise RuntimeError(
+                    f'Bundled tool size mismatch: {destination_file}'
+                )
+
+        dnd_path = release_root / 'bin' / 'tkdnd' / self.dndplat
+        if not dnd_path.is_dir():
+            missing.append(str(dnd_path))
+        if missing:
+            raise FileNotFoundError(
+                'Incomplete release tree. Missing: ' + ', '.join(missing)
+            )
+
+        total_size = sum(
+            path.stat().st_size
+            for path in release_root.rglob('*')
+            if path.is_file()
+        )
+        print(
+            f'Release tree verified: {release_root} '
+            f'({total_size / (1024 * 1024):.1f} MiB uncompressed)'
+        )
+
     def config_folder(self) -> None:
         local_root = Path(self.local)
         machine = getattr(self, 'machine', platform.machine())
         dist = local_root / 'dist'
         dist.mkdir(parents=True, exist_ok=True)
-        dist_bin = dist / 'bin'
+        release_root = self.release_root()
+        release_root.mkdir(parents=True, exist_ok=True)
+        dist_bin = release_root / 'bin'
         dist_bin.mkdir(parents=True, exist_ok=True)
 
         for entry_name in COMMON_BIN_ENTRIES:
             _copy_entry(local_root / 'bin' / entry_name, dist_bin / entry_name)
 
         platform_source = local_root / _platform_binary_path(self.ostype, machine)
-        platform_destination = dist / _platform_binary_path(self.ostype, machine)
+        platform_destination = release_root / _platform_binary_path(self.ostype, machine)
         _copy_entry(platform_source, platform_destination)
 
         dnd_source = local_root / 'bin' / 'tkdnd' / self.dndplat
-        dnd_destination = dist / 'bin' / 'tkdnd' / self.dndplat
+        dnd_destination = release_root / 'bin' / 'tkdnd' / self.dndplat
         _copy_entry(dnd_source, dnd_destination)
 
         for resource_dir in ('config', 'languages', 'templates'):
-            _copy_entry(local_root / resource_dir, dist / resource_dir)
+            _copy_entry(local_root / resource_dir, release_root / resource_dir)
 
         plugin_database = local_root / 'plugins' / 'plugin_db.json'
-        _copy_entry(plugin_database, dist / 'plugins' / 'plugin_db.json')
-        _copy_entry(local_root / 'LICENSE', dist / 'LICENSE')
+        _copy_entry(plugin_database, release_root / 'plugins' / 'plugin_db.json')
+        _copy_entry(local_root / 'LICENSE', release_root / 'LICENSE')
 
         for relative_dir in RUNTIME_DIRECTORIES:
-            (dist / relative_dir).mkdir(parents=True, exist_ok=True)
+            (release_root / relative_dir).mkdir(parents=True, exist_ok=True)
 
         if os.name == 'posix':
             for binary in platform_destination.rglob('*'):
                 if binary.is_file():
                     _add_execute_bits(binary)
-            _add_execute_bits(dist / 'bin' / 'exec.sh')
-            _add_execute_bits(dist / 'tool')
+            _add_execute_bits(release_root / 'bin' / 'exec.sh')
+            _add_execute_bits(self._executable_path(release_root))
 
     def pack_zip(self, source: str | os.PathLike[str], name: str) -> None:
         source_root = Path(source).resolve()
@@ -396,14 +429,13 @@ class Builder:
                     '-c',
                     '-k',
                     '--sequesterRsrc',
-                    '--keepParent',
                     '.',
                     str(zip_path),
                 ],
                 cwd=source_root,
                 check=True,
             )
-            print(f'Pack ZIP done: {zip_path}')
+            print(f'Pack ZIP done: {zip_path} ({zip_path.stat().st_size / (1024 * 1024):.1f} MiB)')
             return
 
         with zipfile.ZipFile(
@@ -432,7 +464,7 @@ class Builder:
                     file_path = root_path / file_name
                     relative_file = file_path.relative_to(source_root)
                     archive.write(file_path, relative_file.as_posix())
-        print(f'Pack ZIP done: {zip_path}')
+        print(f'Pack ZIP done: {zip_path} ({zip_path.stat().st_size / (1024 * 1024):.1f} MiB)')
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

@@ -19,7 +19,11 @@ from src.app.std_streams import ensure_process_streams_installed
 from src.app.startup_metrics import StartupTimeline
 from src.platform import logging_setup
 from src.platform.runtime_directories import ensure_runtime_directories, prepare_log_files
-from src.platform.crash_logging import install_tk_exception_logging, log_startup_phase
+from src.platform.crash_logging import (
+    install_tk_exception_logging,
+    log_startup_phase,
+    stop_startup_watchdog,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +184,10 @@ def _init_tk(args: list):
 
     main_window = create_main_window()
     install_tk_exception_logging(main_window)
+    from src.ui.startup_splash import show_startup_splash
+
+    startup_splash = show_startup_splash(main_window)
+    log_startup_phase('application startup splash ready')
     log_startup_phase('main window created')
     timeline.mark("build_main_window")
     from src.app.composition.window_runtime import initialize_window_runtime
@@ -222,6 +230,9 @@ def _init_tk(args: list):
         main_window.winfo_exists()
     except TclError:
         logging.exception("TclError")
+        if startup_splash is not None:
+            startup_splash.close()
+        stop_startup_watchdog()
         return
 
     from src.app.composition.main_window import compose_main_window
@@ -238,6 +249,10 @@ def _init_tk(args: list):
     validate_runtime_keys(BOOTSTRAP_UI_KEYS, context="bootstrap ui phase")
     _finalize_main_window(main_window)
     timeline.mark("finalize_main_window")
+    if startup_splash is not None:
+        startup_splash.close()
+    stop_startup_watchdog()
+    log_startup_phase('main window revealed')
     require_states().inited = True
     main_window.protocol("WM_DELETE_WINDOW", exit_tool)
     _schedule_cmdline_parse(main_window, args)

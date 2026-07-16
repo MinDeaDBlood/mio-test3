@@ -4,7 +4,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 import platform
+import os
 import sys
+import tempfile
 import time
 import traceback
 from types import TracebackType
@@ -25,14 +27,66 @@ def _resolve_root() -> Path:
 
 
 PROJECT_ROOT = _resolve_root()
-_ACTIVE_LOG_PATH: Path | None = None
+
+
+def _bootstrap_log_directories() -> tuple[Path, ...]:
+    candidates = [PROJECT_ROOT / 'logs']
+    local_app_data = os.environ.get('LOCALAPPDATA')
+    if local_app_data:
+        candidates.append(Path(local_app_data) / 'MIO-KITCHEN' / 'logs')
+    candidates.append(Path(tempfile.gettempdir()) / 'MIO-KITCHEN' / 'logs')
+    unique: list[Path] = []
+    for candidate in candidates:
+        resolved = candidate.expanduser().resolve()
+        if resolved not in unique:
+            unique.append(resolved)
+    return tuple(unique)
+
+
+def _create_bootstrap_log() -> Path | None:
+    timestamp = time.strftime('%Y%m%d_%H-%M-%S', time.localtime())
+    filename = f'mio_{timestamp}_pid-{os.getpid()}_bootstrap.log'
+    for log_dir in _bootstrap_log_directories():
+        try:
+            log_dir.mkdir(parents=True, exist_ok=True)
+            path = log_dir / filename
+            with path.open('a', encoding='utf-8', buffering=1) as stream:
+                stream.write(
+                    f'[{time.strftime("%Y-%m-%d %H:%M:%S")}] '
+                    f'bootstrap entered executable={sys.executable!r} '
+                    f'cwd={os.getcwd()!r} root={str(PROJECT_ROOT)!r}\n'
+                )
+                stream.flush()
+            return path
+        except OSError:
+            continue
+    return None
+
+
+def _bootstrap_note(message: str) -> None:
+    if _ACTIVE_LOG_PATH is None:
+        return
+    try:
+        with _ACTIVE_LOG_PATH.open('a', encoding='utf-8', buffering=1) as stream:
+            stream.write(
+                f'[{time.strftime("%Y-%m-%d %H:%M:%S")}] {message}\n'
+            )
+            stream.flush()
+    except OSError:
+        return
+
+
+_ACTIVE_LOG_PATH: Path | None = _create_bootstrap_log()
 
 
 def _write_local_emergency(phase: str, exception: BaseException) -> Path | None:
     try:
-        log_dir = PROJECT_ROOT / 'logs'
-        log_dir.mkdir(parents=True, exist_ok=True)
-        fallback_path = log_dir / 'mio_emergency_startup.log'
+        if _ACTIVE_LOG_PATH is not None:
+            fallback_path = _ACTIVE_LOG_PATH
+        else:
+            log_dir = PROJECT_ROOT / 'logs'
+            log_dir.mkdir(parents=True, exist_ok=True)
+            fallback_path = log_dir / 'mio_emergency_startup.log'
         with fallback_path.open('a', encoding='utf-8') as stream:
             stream.write(f'\n[{time.strftime("%Y-%m-%d %H:%M:%S")}] phase={phase}\n')
             traceback.print_exception(
@@ -94,10 +148,16 @@ def _initialize_logging() -> None:
         from src.platform.crash_logging import (
             initialize_process_logging,
             log_startup_phase,
+            start_startup_watchdog,
         )
 
-        _ACTIVE_LOG_PATH = initialize_process_logging(PROJECT_ROOT)
+        _bootstrap_note('loading structured logging')
+        _ACTIVE_LOG_PATH = initialize_process_logging(
+            PROJECT_ROOT,
+            log_path=_ACTIVE_LOG_PATH,
+        )
         log_startup_phase('tool.entrypoint.loaded')
+        start_startup_watchdog()
     except BaseException as exception:
         fallback = _record_fatal_error('logging initialization', exception)
         _show_fatal_startup_message(fallback)
@@ -105,6 +165,7 @@ def _initialize_logging() -> None:
 
 
 _initialize_logging()
+_bootstrap_note('structured logging initialized')
 
 if sys.version_info < (3, 10):
     error = RuntimeError(
@@ -118,8 +179,10 @@ try:
     from src.platform.crash_logging import log_startup_phase
 
     log_startup_phase('application import started')
+    _bootstrap_note('application import started')
     from src.app.entrypoint import init
     log_startup_phase('application import completed')
+    _bootstrap_note('application import completed')
 except BaseException as exception:
     log_path = _record_fatal_error('application import', exception)
     _show_fatal_startup_message(log_path)

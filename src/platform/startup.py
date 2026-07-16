@@ -39,16 +39,5 @@ def prepare_startup_platform() -> None:
     else:
         prepare_tool_binaries()
 
-    try:
-        import pyi_splash  # type: ignore[import-not-found]
-    except ModuleNotFoundError:
-        return
-
-    try:
-        pyi_splash.update_text('Loading ...')
-        pyi_splash.close()
-    except Exception:
-        return
-
 
 __all__ = ['prepare_startup_platform', 'prepare_tool_binaries']

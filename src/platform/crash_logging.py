@@ -34,12 +34,14 @@ from src.platform.operation_logging import (
     reset_current_operation,
     set_current_operation,
 )
+from src.platform.startup_watchdog import start_watchdog, stop_watchdog
 from uuid import uuid4
 
 ACTIVE_LOG_PATH_ENV = 'MIO_ACTIVE_LOG_PATH'
 MAX_LOG_BYTES = 10 * 1024 * 1024
 LOG_BACKUP_COUNT = 3
 MAX_RETAINED_RUN_LOGS = 50
+STARTUP_WATCHDOG_SECONDS = 30
 
 _RUNTIME_DIRECTORIES = (
     'logs',
@@ -149,6 +151,17 @@ def _flush_handlers() -> None:
 
 
 def flush_logging() -> None:
+    _flush_handlers()
+
+
+def start_startup_watchdog(timeout_seconds: int = STARTUP_WATCHDOG_SECONDS) -> bool:
+    started = start_watchdog(_FAULT_STREAM, timeout_seconds)
+    _flush_handlers()
+    return started
+
+
+def stop_startup_watchdog() -> None:
+    stop_watchdog()
     _flush_handlers()
 
 
@@ -379,5 +392,7 @@ __all__ = [
     'reset_current_operation',
     'resolve_process_root',
     'set_current_operation',
+    'start_startup_watchdog',
+    'stop_startup_watchdog',
     'write_emergency_fallback',
 ]
