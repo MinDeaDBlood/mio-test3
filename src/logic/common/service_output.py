@@ -38,7 +38,20 @@ def _render_default(value: object) -> str:
 
 
 def _default_event_sink(event: ServiceOutputEvent) -> None:
-    logging.getLogger('mio.logic').info('%s', _render_default(event.message))
+    logger = logging.getLogger('mio.logic')
+    level = {
+        OutputSeverity.INFO: logging.INFO,
+        OutputSeverity.SUCCESS: logging.INFO,
+        OutputSeverity.WARNING: logging.WARNING,
+        OutputSeverity.ERROR: logging.ERROR,
+    }[event.severity]
+    logger.log(
+        level,
+        'channel=%s severity=%s message=%s',
+        event.channel.value,
+        event.severity.value,
+        _render_default(event.message),
+    )
 
 
 @dataclass(frozen=True)

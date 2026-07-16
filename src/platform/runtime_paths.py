@@ -10,6 +10,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 LANGUAGE_DIR = PROJECT_ROOT / "languages"
 LICENSE_DIR = BIN_DIR / "licenses"
 PLUGINS_DIR = PROJECT_ROOT / "plugins"
+LOG_DIR = PROJECT_ROOT / "logs"
 PLUGIN_DATABASE_FILE = PLUGINS_DIR / "plugin_db.json"
 PLUGIN_INSTALL_DIR = PLUGINS_DIR / "installed"
 TEMP_DIR = PROJECT_ROOT / "temp"
@@ -34,6 +35,7 @@ __all__ = [
     "CONTEXT_RULES_FILE",
     "LANGUAGE_DIR",
     "LICENSE_DIR",
+    "LOG_DIR",
     "MTK_PORT_TEMP_DIR",
     "MAGISK_TEMP_DIR",
     "MTK_PORT_PROFILES_FILE",

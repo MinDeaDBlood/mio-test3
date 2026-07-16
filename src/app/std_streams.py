@@ -8,6 +8,7 @@ stream boundary and UI code only attaches/detaches sinks explicitly.
 
 from __future__ import annotations
 
+import logging
 import sys
 from itertools import count
 from threading import RLock
@@ -103,8 +104,35 @@ class StreamRouter:
                 continue
 
 
+class _LineLoggingSink:
+    def __init__(self, *, logger_name: str, level: int):
+        self._logger = logging.getLogger(logger_name)
+        self._level = level
+        self._buffer = ''
+        self._lock = RLock()
+
+    def write(self, value) -> int:
+        text = str(value or '')
+        if not text:
+            return 0
+        with self._lock:
+            self._buffer += text
+            while '\n' in self._buffer:
+                line, self._buffer = self._buffer.split('\n', 1)
+                if line.strip():
+                    self._logger.log(self._level, '%s', line.rstrip())
+        return len(text)
+
+    def flush(self) -> None:
+        with self._lock:
+            if self._buffer.strip():
+                self._logger.log(self._level, '%s', self._buffer.rstrip())
+            self._buffer = ''
+
+
 _SINK_IDS = count(1)
 _STREAMS: dict[str, StreamRouter] = {}
+_LOGGING_SINKS_ATTACHED = False
 
 
 def _origin_for_stream(name: str):
@@ -124,12 +152,21 @@ def _origin_for_stream(name: str):
 
 
 def ensure_process_streams_installed() -> dict[str, StreamRouter]:
+    global _LOGGING_SINKS_ATTACHED
     for name in ('stdout', 'stderr'):
         router = _STREAMS.get(name)
         if router is None:
             router = StreamRouter(name=name, origin=_origin_for_stream(name))
             _STREAMS[name] = router
         setattr(sys, name, router)
+    if not _LOGGING_SINKS_ATTACHED:
+        _STREAMS['stdout'].attach_sink(
+            _LineLoggingSink(logger_name='mio.stdout', level=logging.INFO)
+        )
+        _STREAMS['stderr'].attach_sink(
+            _LineLoggingSink(logger_name='mio.stderr', level=logging.ERROR)
+        )
+        _LOGGING_SINKS_ATTACHED = True
     return dict(_STREAMS)
 
 

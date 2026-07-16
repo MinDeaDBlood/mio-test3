@@ -1,24 +1,145 @@
-#!/bin/env python3
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+import platform
 import sys
 import time
+import traceback
+from types import TracebackType
 
-sys_stdout = sys.stdout
-sys_stderr = sys.stderr
-if sys.version_info.major == 3:
-    if sys.version_info.minor < 8:
-        input(
-            f"Not supported: [{sys.version}] yet\nEnter to quit\nSorry for any inconvenience caused"
+
+def _resolve_root() -> Path:
+    if getattr(sys, 'frozen', False):
+        executable_parent = Path(sys.executable).resolve().parent
+        if (
+            platform.system() == 'Darwin'
+            and executable_parent.name == 'MacOS'
+            and executable_parent.parent.name == 'Contents'
+            and executable_parent.parent.parent.suffix == '.app'
+        ):
+            return executable_parent.parent.parent.parent
+        return executable_parent
+    return Path(__file__).resolve().parent
+
+
+PROJECT_ROOT = _resolve_root()
+_ACTIVE_LOG_PATH: Path | None = None
+
+
+def _write_local_emergency(phase: str, exception: BaseException) -> Path | None:
+    try:
+        log_dir = PROJECT_ROOT / 'logs'
+        log_dir.mkdir(parents=True, exist_ok=True)
+        fallback_path = log_dir / 'mio_emergency_startup.log'
+        with fallback_path.open('a', encoding='utf-8') as stream:
+            stream.write(f'\n[{time.strftime("%Y-%m-%d %H:%M:%S")}] phase={phase}\n')
+            traceback.print_exception(
+                type(exception),
+                exception,
+                exception.__traceback__,
+                file=stream,
+            )
+            stream.flush()
+        return fallback_path
+    except Exception:
+        return None
+
+
+def _show_fatal_startup_message(log_path: Path | None) -> None:
+    message = 'MIO Kitchen could not start.'
+    if log_path is not None:
+        message += f'\n\nDiagnostic log:\n{log_path}'
+    try:
+        from tkinter import Tk, messagebox
+
+        root = Tk()
+        root.withdraw()
+        messagebox.showerror('MIO Kitchen startup error', message, parent=root)
+        root.destroy()
+    except Exception:
+        return
+
+
+def _record_fatal_error(
+    phase: str,
+    exception: BaseException,
+    trace: TracebackType | None = None,
+) -> Path | None:
+    global _ACTIVE_LOG_PATH
+    try:
+        from src.platform.crash_logging import flush_logging, write_emergency_fallback
+
+        logging.getLogger('mio.crash').critical(
+            'Fatal application error during %s',
+            phase,
+            exc_info=(type(exception), exception, trace or exception.__traceback__),
         )
-        sys.exit(1)
-try:
-    from src.app.entrypoint import init
-except Exception as e:
-    sys.stdout = sys_stdout
-    sys.stderr = sys_stderr
-    print(e)
-    print("Sorry! We cannot init the tool.\nPlease report this error to developers.!")
-    time.sleep(3)
-    sys.exit(1)
+        flush_logging()
+        if _ACTIVE_LOG_PATH is not None:
+            return _ACTIVE_LOG_PATH
+        return write_emergency_fallback(
+            PROJECT_ROOT,
+            phase=phase,
+            exception=exception,
+        )
+    except Exception:
+        return _write_local_emergency(phase, exception)
 
-if __name__ == "__main__":
-    init(sys.argv)
+
+def _initialize_logging() -> None:
+    global _ACTIVE_LOG_PATH
+    try:
+        from src.platform.crash_logging import (
+            initialize_process_logging,
+            log_startup_phase,
+        )
+
+        _ACTIVE_LOG_PATH = initialize_process_logging(PROJECT_ROOT)
+        log_startup_phase('tool.entrypoint.loaded')
+    except BaseException as exception:
+        fallback = _record_fatal_error('logging initialization', exception)
+        _show_fatal_startup_message(fallback)
+        raise SystemExit(1) from exception
+
+
+_initialize_logging()
+
+if sys.version_info < (3, 10):
+    error = RuntimeError(
+        f'Unsupported Python version: {sys.version}. Python 3.10 or newer is required.'
+    )
+    log_path = _record_fatal_error('python version validation', error)
+    _show_fatal_startup_message(log_path)
+    raise SystemExit(1)
+
+try:
+    from src.platform.crash_logging import log_startup_phase
+
+    log_startup_phase('application import started')
+    from src.app.entrypoint import init
+    log_startup_phase('application import completed')
+except BaseException as exception:
+    log_path = _record_fatal_error('application import', exception)
+    _show_fatal_startup_message(log_path)
+    time.sleep(1)
+    raise SystemExit(1) from exception
+
+
+if __name__ == '__main__':
+    try:
+        log_startup_phase('application runtime started')
+        init(sys.argv)
+        logging.getLogger('mio.lifecycle').info('Application runtime returned normally')
+    except SystemExit as exception:
+        exit_code = exception.code if isinstance(exception.code, int) else 1
+        logging.getLogger('mio.lifecycle').info(
+            'Application requested SystemExit with code %s',
+            exit_code,
+        )
+        raise
+    except BaseException as exception:
+        log_path = _record_fatal_error('application runtime', exception)
+        _show_fatal_startup_message(log_path)
+        raise SystemExit(1) from exception

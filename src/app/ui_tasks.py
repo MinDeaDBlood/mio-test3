@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+import logging
 from typing import TypeVar
 
-from src.app.background_jobs import start_background_job
+from src.app.background_jobs import describe_callable, start_background_job
 from src.app.operation_gate import OperationBusyError, OperationGate, shared_operation_gate
 from src.app.ui_feedback import UiDispatcher
 from src.core.contracts import LoggerProtocol
 
 T = TypeVar('T')
+
+logger = logging.getLogger(__name__)
 
 
 WorkerStarterProtocol = Callable[..., object]
@@ -97,12 +100,20 @@ class UiTaskRunner:
             finally:
                 self._run_finally(on_finally)
 
+        worker_name = describe_callable(worker)
+        active_logger = self.logger or logger
+
         def worker_target() -> None:
+            active_logger.info(
+                'UiTaskRunner worker started: worker=%s exclusive=%s daemon=%s',
+                worker_name,
+                exclusive,
+                daemon,
+            )
             try:
                 result = worker(*args, **keyword_args)
             except Exception as error:
-                if self.logger is not None:
-                    self.logger.exception('UiTaskRunner.run worker failed')
+                active_logger.exception('UiTaskRunner.run worker failed: %s', worker_name)
                 if on_error is not None or on_finally is not None:
                     self.dispatcher.dispatch(finalize_error, error)
                 return
@@ -110,6 +121,7 @@ class UiTaskRunner:
                 if gate_acquired:
                     self.operation_gate.release()
 
+            active_logger.info('UiTaskRunner worker completed: %s', worker_name)
             if on_success is not None or on_finally is not None:
                 self.dispatcher.dispatch(finalize_success, result)
 
@@ -118,8 +130,7 @@ class UiTaskRunner:
         except (OSError, RuntimeError, TypeError, ValueError) as error:
             if gate_acquired:
                 self.operation_gate.release()
-            if self.logger is not None:
-                self.logger.exception('UiTaskRunner.run could not start worker')
+            (self.logger or logger).exception('UiTaskRunner.run could not start worker: %s', worker_name)
             if on_error is not None or on_finally is not None:
                 self.dispatcher.dispatch(finalize_error, error)
             return False

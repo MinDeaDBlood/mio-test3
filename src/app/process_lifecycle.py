@@ -10,15 +10,19 @@ from src.app.runtime.contexts.settings import resolve_animation
 from src.app.runtime.contexts.tooling import resolve_tool_self
 from src.app.runtime.contexts.ui import resolve_ui_host_window
 from src.platform.process_restart import build_restart_argv, run_replacement_process
+from src.platform.crash_logging import flush_logging, operation_context
 
 
 ConfirmRestart = Callable[[], bool]
 
 
 def exit_tool() -> None:
-    module_manager = resolve_module_manager()
-    module_manager.addon_loader.run_entry(module_manager.addon_entries.close)
+    logging.getLogger(__name__).info('Application shutdown requested')
+    with operation_context('lifecycle.plugin_shutdown'):
+        module_manager = resolve_module_manager()
+        module_manager.addon_loader.run_entry(module_manager.addon_entries.close)
     resolve_ui_host_window().destroy()
+    flush_logging()
 
 
 def restart(window=None, *, confirm_unsaved: ConfirmRestart | None = None) -> bool:

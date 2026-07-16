@@ -19,6 +19,9 @@ from src.app.std_streams import ensure_process_streams_installed
 from src.app.startup_metrics import StartupTimeline
 from src.platform import logging_setup
 from src.platform.runtime_directories import ensure_runtime_directories, prepare_log_files
+from src.platform.crash_logging import install_tk_exception_logging, log_startup_phase
+
+logger = logging.getLogger(__name__)
 
 start = dti()
 
@@ -146,17 +149,20 @@ def _init_tk(args: list):
     from tkinter import TclError
 
     timeline = StartupTimeline()
+    log_startup_phase('bootstrap entered')
     ensure_process_streams_installed()
     timeline.mark("process_streams")
     ensure_runtime_directories()
     prepare_log_files(require_log_dir(), get_tool_log())
     _configure_logging()
+    log_startup_phase('runtime directories and logging ready')
 
     try:
         from src.app.localization_selection import load_selected_language
 
         load_selected_language(require_settings())
     except (FileNotFoundError, ValueError) as exc:
+        logger.exception('Selected language could not be loaded')
         from src.platform.language_repository import read_language_map
         from src.ui import startup_checks_keys
         from src.ui.startup_checks import present_fatal_startup_error
@@ -173,6 +179,8 @@ def _init_tk(args: list):
     from src.app.composition.main_window import create_main_window
 
     main_window = create_main_window()
+    install_tk_exception_logging(main_window)
+    log_startup_phase('main window created')
     timeline.mark("build_main_window")
     from src.app.composition.window_runtime import initialize_window_runtime
 
@@ -219,6 +227,7 @@ def _init_tk(args: list):
     from src.app.composition.main_window import compose_main_window
 
     composition = compose_main_window(main_window)
+    log_startup_phase('main window composition completed')
     timeline.mark("build_gui")
     from src.app.runtime.phases import register_bootstrap_ui_runtime
 
@@ -236,7 +245,9 @@ def _init_tk(args: list):
     timeline.log(logger=logging)
     try:
         main_window.after(1000, main_window.start_loops)
+        log_startup_phase('Tk mainloop entered')
         main_window.mainloop()
+        logger.info('Tk mainloop returned normally')
     except KeyboardInterrupt:
         exit_tool()
     return composition

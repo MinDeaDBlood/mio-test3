@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.platform.runtime_paths import (
+    LOG_DIR,
     MAGISK_TEMP_DIR,
     MTK_PORT_TEMP_DIR,
     PLUGIN_DOWNLOAD_DIR,
@@ -13,10 +14,12 @@ from src.platform.runtime_paths import (
 )
 
 RUNTIME_DIRECTORIES = (
+    LOG_DIR,
     TEMP_DIR,
     PLUGIN_DOWNLOAD_DIR,
     PLUGIN_RUNTIME_DIR,
     UPDATE_TEMP_DIR,
+    LOG_DIR,
     MAGISK_TEMP_DIR,
     MTK_PORT_TEMP_DIR,
     PLUGIN_INSTALL_DIR,

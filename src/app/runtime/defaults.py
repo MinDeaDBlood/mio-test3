@@ -20,6 +20,7 @@ from src.core.process_runner import call
 from src.core.paths import prog_path
 from src.app.runtime.flags import states
 from src.core.random_utils import v_code
+from src.platform.crash_logging import get_active_log_path
 
 
 RUNTIME_DEFAULTS: dict[str, Any]
@@ -36,8 +37,11 @@ def get_early_runtime_defaults() -> EarlyRuntimeDefaults:
     tool_self = os.path.normpath(os.path.abspath(sys.argv[0]))
     temp = str(TEMP_DIR).replace(os.sep, "/")
     log_dir = os.path.join(prog_path, "logs").replace(os.sep, "/")
+    active_log_path = get_active_log_path()
     tool_log = (
-        f"{log_dir}/{time.strftime('%Y%m%d_%H-%M-%S', time.localtime())}_{v_code()}.log"
+        str(active_log_path).replace(os.sep, "/")
+        if active_log_path is not None
+        else f"{log_dir}/{time.strftime('%Y%m%d_%H-%M-%S', time.localtime())}_{v_code()}.log"
     )
     context_rule_file = str(CONTEXT_RULES_FILE)
     module_exec = os.path.join(prog_path, "bin", "exec.sh").replace(os.sep, "/")

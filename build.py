@@ -1,70 +1,78 @@
 #!/usr/bin/env python3
-# pylint: disable=line-too-long
-# Copyright (C) 2022-2025 The MIO-KITCHEN-SOURCE Project
-#
-# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      https://www.gnu.org/licenses/agpl-3.0.en.html#license-text
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (C) 2022-2026 The MIO-KITCHEN-SOURCE Project
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0.
+
+from __future__ import annotations
+
 import argparse
+import configparser
 import os
+from pathlib import Path
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 import zipfile
-from platform import system
-from typing import List, Optional
-from pathlib import Path
+from typing import Optional
 
-from pip._internal.cli.main import main as _main
-
-
-RELEASE_TARGETS = {"win", "ubuntu24.04", "macos15"}
-PYINSTALLER_PATHS = [".", "src", "src/core"]
+RELEASE_TARGETS = {'win', 'ubuntu24.04', 'macos15'}
+PYINSTALLER_PATHS = ['.', 'src', 'src/core']
 PYINSTALLER_HIDDEN_IMPORTS = [
-    "tkinter",
-    "PIL",
-    "PIL._tkinter_finder",
-    "requests",
-    "zstandard",
-    "protobuf",
+    'tkinter',
+    'PIL',
+    'PIL._tkinter_finder',
+    'requests',
+    'zstandard',
+    'google.protobuf',
 ]
-PYINSTALLER_EXCLUDES = ["numpy"]
-ICON_PATH = Path("icon.ico")
+PYINSTALLER_EXCLUDES = ['numpy']
+ICON_PATH = Path('icon.ico')
+RUNTIME_DIRECTORIES = (
+    'logs',
+    'plugins/installed',
+    'temp',
+    'temp/plugins',
+    'temp/plugins/downloads',
+    'temp/plugins/runtime',
+    'temp/updates',
+    'temp/magisk',
+    'temp/mtk_port',
+)
+COMMON_BIN_ENTRIES = (
+    'licenses',
+    'keys',
+    'extra_flash',
+    'kemiaojiang.png',
+    'License_kemiaojiang.txt',
+    'exec.sh',
+    'update-binary',
+)
 
 
 def struct_calc_bits() -> int:
     import struct
 
-    return struct.calcsize("P") * 8
+    return struct.calcsize('P') * 8
 
 
 def normalize_target_os(ostype: str, target_os: Optional[str]) -> Optional[str]:
     if target_os is None:
-        if ostype == "Windows":
-            raise ValueError("Windows builds require --target-os win")
+        if ostype == 'Windows':
+            raise ValueError('Windows builds require --target-os win')
         return None
 
     normalized = target_os.lower()
     if normalized not in RELEASE_TARGETS:
-        raise ValueError(f"Unsupported --target-os: {target_os}")
-
+        raise ValueError(f'Unsupported --target-os: {target_os}')
     expected_platform = {
-        "win": "Windows",
-        "ubuntu24.04": "Linux",
-        "macos15": "Darwin",
+        'win': 'Windows',
+        'ubuntu24.04': 'Linux',
+        'macos15': 'Darwin',
     }[normalized]
     if ostype != expected_platform:
         raise ValueError(
-            f"Target {normalized} requires {expected_platform}, current platform is {ostype}"
+            f'Target {normalized} requires {expected_platform}, current platform is {ostype}'
         )
     return normalized
 
@@ -78,100 +86,152 @@ def resolve_artifact_name(
     machine_name = (machine or platform.machine()).lower()
     normalized = normalize_target_os(ostype, target_os)
 
-    if ostype == "Windows":
-        arch_bits = bits or struct_calc_bits()
-        if arch_bits != 64:
-            raise ValueError("The Windows release target supports only 64-bit builds")
-        return "MIO-KITCHEN-win.x64.zip"
-
-    if ostype == "Linux":
-        if normalized == "ubuntu24.04":
-            if machine_name not in {"x86_64", "amd64"}:
-                raise ValueError("The Ubuntu 24.04 release target requires x86_64")
-            return "MIO-KITCHEN-ubuntu24.04-x64.zip"
-        if "aarch64" in machine_name or "arm64" in machine_name:
-            return "MIO-KITCHEN-linux.arm64.zip"
-        if "loongarch64" in machine_name:
-            return "MIO-KITCHEN-linux.loongarch64.zip"
-        return "MIO-KITCHEN-linux.x64.zip"
-
-    if ostype == "Darwin":
-        if normalized == "macos15":
-            if machine_name in {"x86_64", "amd64"}:
-                return "MIO-KITCHEN-macos15-intel-x64.zip"
-            if machine_name in {"arm64", "aarch64"}:
-                return "MIO-KITCHEN-macos15-arm64.zip"
-            raise ValueError(f"Unsupported macOS 15 architecture: {machine_name}")
-        if machine_name in {"x86_64", "amd64"}:
-            return "MIO-KITCHEN-macos.x64.zip"
-        return "MIO-KITCHEN-macos.arm64.zip"
-
-    raise ValueError(f"Unsupported platform: {ostype}")
+    if ostype == 'Windows':
+        if (bits or struct_calc_bits()) != 64:
+            raise ValueError('The Windows release target supports only 64-bit builds')
+        return 'MIO-KITCHEN-win.x64.zip'
+    if ostype == 'Linux':
+        if normalized == 'ubuntu24.04':
+            if machine_name not in {'x86_64', 'amd64'}:
+                raise ValueError('The Ubuntu 24.04 release target requires x86_64')
+            return 'MIO-KITCHEN-ubuntu24.04-x64.zip'
+        if machine_name in {'aarch64', 'arm64'}:
+            return 'MIO-KITCHEN-linux.arm64.zip'
+        if machine_name == 'loongarch64':
+            return 'MIO-KITCHEN-linux.loongarch64.zip'
+        return 'MIO-KITCHEN-linux.x64.zip'
+    if ostype == 'Darwin':
+        if normalized == 'macos15':
+            if machine_name in {'x86_64', 'amd64'}:
+                return 'MIO-KITCHEN-macos15-intel-x64.zip'
+            if machine_name in {'arm64', 'aarch64'}:
+                return 'MIO-KITCHEN-macos15-arm64.zip'
+            raise ValueError(f'Unsupported macOS 15 architecture: {machine_name}')
+        return (
+            'MIO-KITCHEN-macos.x64.zip'
+            if machine_name in {'x86_64', 'amd64'}
+            else 'MIO-KITCHEN-macos.arm64.zip'
+        )
+    raise ValueError(f'Unsupported platform: {ostype}')
 
 
-def build_source_data_args(source_root: str = "src") -> List[str]:
-    data_args: List[str] = []
+def build_source_data_args(source_root: str = 'src') -> list[str]:
+    data_args: list[str] = []
     if not os.path.isdir(source_root):
         return data_args
     for root, _, files in os.walk(source_root):
         for file_name in files:
-            if not file_name.endswith(".py"):
+            if not file_name.endswith('.py'):
                 continue
             file_path = os.path.join(root, file_name)
             data_args.extend(
-                ["--add-data", f"{os.path.abspath(file_path)}{os.pathsep}{root}"]
+                ['--add-data', f'{os.path.abspath(file_path)}{os.pathsep}{root}']
             )
     return data_args
 
 
 def _splash_path(ostype: str, machine_name: str) -> Optional[str]:
+    if ostype == 'Darwin':
+        return None
     splash_name = (
-        "splash_loongarch.png"
-        if ostype == "Linux" and machine_name == "loongarch64"
-        else "splash.png"
+        'splash_loongarch.png'
+        if ostype == 'Linux' and machine_name.lower() == 'loongarch64'
+        else 'splash.png'
     )
     splash_path = Path(splash_name)
-    if splash_path.exists():
-        return str(splash_path.resolve())
-    return None
+    return str(splash_path.resolve()) if splash_path.is_file() else None
 
 
-def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> List[str]:
+def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> list[str]:
     machine_name = machine or platform.machine()
-    bundle_mode = ["--onedir", "--windowed"] if ostype == "Darwin" else [
-        "--onefile",
-        "--windowed",
-    ]
+    bundle_mode = (
+        ['--onedir', '--windowed']
+        if ostype == 'Darwin'
+        else ['--onefile', '--windowed']
+    )
     args = [
-        "tool.py",
+        'tool.py',
         *bundle_mode,
-        "--specpath",
-        "build",
-        "--collect-data",
-        "sv_ttk",
-        "--collect-data",
-        "chlorophyll",
-        "--collect-submodules",
-        "src",
+        '--clean',
+        '--noconfirm',
+        '--specpath',
+        'build',
+        '--name',
+        'tool',
+        '--icon',
+        str(ICON_PATH.resolve()),
+        '--collect-data',
+        'sv_ttk',
+        '--collect-data',
+        'chlorophyll',
+        '--collect-submodules',
+        'src',
     ]
     for path in PYINSTALLER_PATHS:
-        args.extend(["--paths", path])
+        args.extend(['--paths', path])
     for hidden_import in PYINSTALLER_HIDDEN_IMPORTS:
-        args.extend(["--hidden-import", hidden_import])
+        args.extend(['--hidden-import', hidden_import])
     for excluded_module in PYINSTALLER_EXCLUDES:
-        args.extend(["--exclude-module", excluded_module])
-    if ICON_PATH.exists():
-        args.extend(["--icon", str(ICON_PATH.resolve())])
-
-    # PyInstaller splash screens are unsupported on macOS. Windows and Linux
-    # keep the existing splash behavior, including the LoongArch image.
-    if ostype != "Darwin":
-        splash_path = _splash_path(ostype, machine_name)
-        if splash_path:
-            args.extend(["--splash", splash_path])
-
-    args.extend(build_source_data_args("src"))
+        args.extend(['--exclude-module', excluded_module])
+    splash_path = _splash_path(ostype, machine_name)
+    if splash_path is not None:
+        args.extend(['--splash', splash_path])
+    args.extend(build_source_data_args('src'))
     return args
+
+
+def _dnd_platform(ostype: str, machine: str) -> str:
+    normalized = machine.lower()
+    if ostype == 'Windows' and normalized in {'amd64', 'x86_64'}:
+        return 'win-x64'
+    if ostype == 'Linux' and normalized in {'amd64', 'x86_64'}:
+        return 'linux-x64'
+    if ostype == 'Linux' and normalized in {'aarch64', 'arm64'}:
+        return 'linux-arm64'
+    if ostype == 'Linux' and normalized == 'loongarch64':
+        return 'linux-loongarch64'
+    if ostype == 'Darwin' and normalized in {'amd64', 'x86_64'}:
+        return 'osx-x64'
+    if ostype == 'Darwin' and normalized in {'aarch64', 'arm64'}:
+        return 'osx-arm64'
+    raise ValueError(f'Unsupported TkDnD platform: {ostype} {machine}')
+
+
+def _platform_binary_path(ostype: str, machine: str) -> Path:
+    normalized = machine.lower()
+    directory_name = machine
+    if ostype == 'Windows' and normalized in {'amd64', 'x86_64'}:
+        directory_name = 'AMD64'
+    elif ostype == 'Linux' and normalized in {'amd64', 'x86_64'}:
+        directory_name = 'x86_64'
+    elif ostype == 'Darwin' and normalized in {'amd64', 'x86_64'}:
+        directory_name = 'x86_64'
+    elif normalized in {'aarch64', 'arm64'}:
+        directory_name = 'arm64' if ostype == 'Darwin' else 'aarch64'
+    return Path('bin') / ostype / directory_name
+
+
+def _copy_entry(source: Path, destination: Path) -> None:
+    if source.is_dir():
+        shutil.copytree(source, destination, dirs_exist_ok=True, copy_function=shutil.copy2)
+    elif source.is_file():
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+
+
+def _add_execute_bits(path: Path) -> None:
+    if not path.is_file():
+        return
+    current_mode = path.stat().st_mode
+    path.chmod(current_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def _zip_directory_entry(archive: zipfile.ZipFile, relative_path: str) -> None:
+    normalized = relative_path.replace(os.sep, '/').rstrip('/') + '/'
+    info = zipfile.ZipInfo(normalized)
+    info.create_system = 3
+    info.external_attr = (stat.S_IFDIR | 0o755) << 16
+    archive.writestr(info, b'')
 
 
 class Builder:
@@ -180,288 +240,236 @@ class Builder:
         target_os: Optional[str] = None,
         *,
         skip_install: bool = False,
-        requirements_file: str = "requirements.txt",
+        requirements_file: str = 'requirements.txt',
     ):
-        ostype = system()
-        # Определяем архитектуру
-        machine = platform.machine().lower()
-        bits = struct_calc_bits()
-        self.target_os = normalize_target_os(ostype, target_os)
-        name = resolve_artifact_name(ostype, machine, bits, self.target_os)
-
-        self.name = name
-        self.local = os.getcwd()
-        self.ostype = ostype
-        self.dndplat = None
+        self.ostype = platform.system()
+        self.machine = platform.machine()
+        self.target_os = normalize_target_os(self.ostype, target_os)
+        self.name = resolve_artifact_name(
+            self.ostype,
+            self.machine,
+            struct_calc_bits(),
+            self.target_os,
+        )
+        self.local = Path.cwd()
+        self.dndplat = _dnd_platform(self.ostype, self.machine)
         self.skip_install = skip_install
         self.requirements_file = requirements_file
 
-    def build(self):
-        print("Building...")
+    def build(self) -> None:
+        print('Building...')
+        self.validate_sources()
         if self.skip_install:
-            print("Skipping dependency installation; using prepared environment.")
+            print('Skipping dependency installation; using prepared environment.')
         else:
             self.install_package()
+        self.clean_build_directories()
         self.pyinstaller_build()
         self.config_folder()
-        self.pack_zip(f"{self.local}/dist", self.name)
+        self.pack_zip(self.local / 'dist', self.name)
 
-    def run_command(self, command: List[str], strip: bool = False):
+    def validate_sources(self) -> None:
+        required = [
+            Path('tool.py'),
+            ICON_PATH,
+            Path('config/settings.ini'),
+            Path('plugins/plugin_db.json'),
+            Path('languages/English.json'),
+            Path('bin/tkdnd') / self.dndplat,
+            _platform_binary_path(self.ostype, self.machine),
+        ]
+        if self.ostype != 'Darwin':
+            splash_path = _splash_path(self.ostype, self.machine)
+            if splash_path is None:
+                required.append(Path('splash.png'))
+        missing = [str(path) for path in required if not path.exists()]
+        if missing:
+            raise FileNotFoundError('Missing required build resources: ' + ', '.join(missing))
+
+    def clean_build_directories(self) -> None:
+        for directory in (self.local / 'build', self.local / 'dist'):
+            shutil.rmtree(directory, ignore_errors=True)
+        output = self.local / self.name
+        if output.exists():
+            output.unlink()
+
+    def run_command(self, command: list[str], strip: bool = False) -> Optional[str]:
         try:
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
-            return result.stdout.strip() if strip else result.stdout
-        except subprocess.CalledProcessError:
-            return None
-
-    def generate_release_body(self):
-        print("Generating Release Body...")
-        # load config
-        with open("config/settings.ini", "r", encoding="utf-8") as f:
-            ver = [line for line in f.readlines() if "version" in line]
-            ver = ver[0].strip().split(" = ")[1]
-        with open("body.md", "w", encoding="utf-8", newline="\n") as f:
-            f.write(f"Build times: {os.getenv('GITHUB_RUN_NUMBER')}\n")
-            f.write(f"Actor: {os.getenv('GITHUB_TRIGGERING_ACTOR')}\n")
-            f.write(f"Repository: {os.getenv('GITHUB_REPOSITORY')}\n")
-            f.write(f"Version: {ver}\n")
-            f.write("Changelog:\n")
-            f.write("```\n")
-            head = self.run_command(["git", "rev-parse", "HEAD"], strip=True)
-            f.write(self.run_command(["git", "log", "-1", "--pretty=%B", head]))
-            f.write("```\n")
-
-    def move_artifacts(self):
-        artifacts = [
-            "MIO-KITCHEN-win.x64",
-            "MIO-KITCHEN-ubuntu24.04-x64",
-            "MIO-KITCHEN-macos15-intel-x64",
-            "MIO-KITCHEN-macos15-arm64",
-        ]
-
-        for artifact in artifacts:
-            source = Path(artifact) / f"{artifact}.zip"
-            destination = Path(f"{artifact}.zip")
-            if source.is_file():
-                source.replace(destination)
-
-
-    def install_package(self):
-        with open(self.requirements_file, "r", encoding="utf-8") as requirements_stream:
-            for requirement in requirements_stream.read().split("\n"):
-                if not requirement.strip() or requirement.strip().startswith("#"):
-                    continue
-                print(f"Installing {requirement}")
-                _main(["install", requirement])
-
-    def pyinstaller_build(self):
-        import PyInstaller.__main__
-
-        dndplat = self.dndplat
-
-        if os.name == "nt":
-            # Windows - используем tool.spec
-            mach_ = platform.machine()
-            platform.machine = (
-                lambda: "x86"
-                if platform.architecture()[0] == "32bit" and mach_ == "AMD64"
-                else mach_
-            )
-            if platform.machine() == "x86":
-                dndplat = "win-x86"
-            elif platform.machine() == "AMD64":
-                dndplat = "win-x64"
-            elif platform.machine() == "ARM64":
-                dndplat = "win-arm64"
-
-            # Используем tool.spec для лучшего контроля
-            PyInstaller.__main__.run(
-                build_pyinstaller_args("Windows", platform.machine())
-            )
-
-        elif self.ostype == "Darwin":
-            if platform.machine() == "x86_64":
-                dndplat = "osx-x64"
-            elif platform.machine() == "arm64":
-                dndplat = "osx-arm64"
-            PyInstaller.__main__.run(
-                build_pyinstaller_args("Darwin", platform.machine())
-            )
-        elif os.name == "posix":
-            if self.ostype == "Linux":
-                if platform.machine() == "x86_64":
-                    dndplat = "linux-x64"
-                elif platform.machine() == "aarch64":
-                    dndplat = "linux-arm64"
-                elif platform.machine() == "loongarch64":
-                    dndplat = "linux-loongarch64"
-            PyInstaller.__main__.run(
-                build_pyinstaller_args(self.ostype, platform.machine())
-            )
-
-        self.dndplat = dndplat
-
-    def config_folder(self):
-        if not os.path.exists("dist/bin"):
-            os.makedirs("dist/bin", exist_ok=True)
-        while_list = [
-            "images",
-            "licenses",
-            "extra_flash",
-            self.ostype,
-            "kemiaojiang.png",
-            "License_kemiaojiang.txt",
-            "tkdnd",
-            "exec.sh",
-            "Android",
-            "Darwin",
-            "Linux",
-            "Windows",
-            "keys",
-            "update-binary",
-        ]
-        for i in os.listdir(self.local + "/bin"):
-            if i in while_list:
-                if os.path.isdir(f"{self.local}/bin/{i}"):
-                    shutil.copytree(
-                        f"{self.local}/bin/{i}",
-                        f"{self.local}/dist/bin/{i}",
-                        dirs_exist_ok=True,
-                    )
-                else:
-                    shutil.copy(f"{self.local}/bin/{i}", f"{self.local}/dist/bin/{i}")
-        for resource_dir in ("config", "languages", "templates"):
-            source = f"{self.local}/{resource_dir}"
-            destination = f"{self.local}/dist/{resource_dir}"
-            if os.path.isdir(source):
-                shutil.copytree(source, destination, dirs_exist_ok=True)
-        plugin_db_source = f"{self.local}/plugins/plugin_db.json"
-        plugin_db_destination = f"{self.local}/dist/plugins/plugin_db.json"
-        os.makedirs(os.path.dirname(plugin_db_destination), exist_ok=True)
-        shutil.copy(plugin_db_source, plugin_db_destination)
-        for runtime_dir in (
-            "plugins/installed",
-            "temp/plugins/downloads",
-            "temp/plugins/runtime",
-            "temp/mtk_port",
-            "temp/updates",
-            "temp/magisk",
-            "logs",
-        ):
-            os.makedirs(f"{self.local}/dist/{runtime_dir}", exist_ok=True)
-        if os.path.exists(f"{self.local}/LICENSE") and not os.path.exists(
-            "dist/LICENSE"
-        ):
-            shutil.copy(f"{self.local}/LICENSE", f"{self.local}/dist/LICENSE")
-        elif not os.path.exists(f"{self.local}/LICENSE"):
-            print("LICENSE file not found; skipping license copy.")
-        # Keep all tkdnd platforms for universal build
-        # if self.dndplat:
-        #     for i in os.listdir(f"{self.local}/dist/bin/tkdnd"):
-        #         if i[:3] == self.dndplat[:3] and i.endswith("x64") and self.dndplat.endswith('x86'):
-        #             continue
-        #         if i == self.dndplat:
-        #             continue
-        #         if os.path.isdir(f"{self.local}/dist/bin/tkdnd/{i}"):
-        #             shutil.rmtree(f'{self.local}/dist/bin/tkdnd/{i}', ignore_errors=True)
-        # else:
-        #     raise FileNotFoundError("Cannot Build!!!TkinterDnd2 Missing!!!!!!!!!!")
-        if not self.dndplat:
-            raise FileNotFoundError("Cannot Build!!!TkinterDnd2 Missing!!!!!!!!!!")
-        if os.name == "posix":
-            if platform.machine() == "x86_64" and os.path.exists(
-                f"{self.local}/dist/bin/Linux/aarch64"
-            ):
-                try:
-                    shutil.rmtree(f"{self.local}/dist/bin/Linux/aarch64")
-                except Exception as e:
-                    print(e)
-            for root, dirs, files in os.walk(f"{self.local}/dist", topdown=True):
-                for i in files:
-                    print(f"Chmod {os.path.join(root, i)}")
-                    os.chmod(os.path.join(root, i), 0o7777, follow_symlinks=False)
-
-    def pack_zip(self, source, name):
-        abs_folder_path = os.path.abspath(source)
-        zip_file_path = os.path.join(self.local, name)
-
-        if self.ostype == "Darwin":
-            # Preserve the .app bundle layout, symlinks, permissions, and macOS
-            # metadata. Python's zipfile module does not reliably preserve all
-            # of those details for an onedir application bundle.
-            subprocess.run(
-                [
-                    "/usr/bin/ditto",
-                    "-c",
-                    "-k",
-                    "--sequesterRsrc",
-                    ".",
-                    zip_file_path,
-                ],
-                cwd=abs_folder_path,
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
                 check=True,
             )
-            print("Pack Zip Done!")
+        except (OSError, subprocess.CalledProcessError):
+            return None
+        return result.stdout.strip() if strip else result.stdout
+
+    def generate_release_body(self) -> None:
+        print('Generating Release Body...')
+        parser = configparser.ConfigParser()
+        parser.read('config/settings.ini', encoding='utf-8')
+        version = parser.get('setting', 'version', fallback='unknown')
+        head = self.run_command(['git', 'rev-parse', 'HEAD'], strip=True) or 'unknown'
+        changelog = (
+            self.run_command(['git', 'log', '-1', '--pretty=%B', head], strip=True)
+            or 'No changelog was provided.'
+        )
+        with open('body.md', 'w', encoding='utf-8', newline='\n') as stream:
+            stream.write(f'Build: {os.getenv("GITHUB_RUN_NUMBER", "local")}\n')
+            stream.write(f'Actor: {os.getenv("GITHUB_TRIGGERING_ACTOR", "local")}\n')
+            stream.write(f'Repository: {os.getenv("GITHUB_REPOSITORY", "local")}\n')
+            stream.write(f'Version: {version}\n\n')
+            stream.write('## Changelog\n\n')
+            stream.write(changelog.rstrip() + '\n')
+
+    def move_artifacts(self) -> None:
+        for artifact in (
+            'MIO-KITCHEN-win.x64',
+            'MIO-KITCHEN-ubuntu24.04-x64',
+            'MIO-KITCHEN-macos15-intel-x64',
+            'MIO-KITCHEN-macos15-arm64',
+        ):
+            source = Path(artifact) / f'{artifact}.zip'
+            if source.is_file():
+                source.replace(Path(f'{artifact}.zip'))
+
+    def install_package(self) -> None:
+        subprocess.run(
+            [sys.executable, '-m', 'pip', 'install', '-r', self.requirements_file],
+            check=True,
+        )
+
+    def pyinstaller_build(self) -> None:
+        import PyInstaller.__main__
+
+        PyInstaller.__main__.run(
+            build_pyinstaller_args(self.ostype, self.machine)
+        )
+
+    def config_folder(self) -> None:
+        local_root = Path(self.local)
+        machine = getattr(self, 'machine', platform.machine())
+        dist = local_root / 'dist'
+        dist.mkdir(parents=True, exist_ok=True)
+        dist_bin = dist / 'bin'
+        dist_bin.mkdir(parents=True, exist_ok=True)
+
+        for entry_name in COMMON_BIN_ENTRIES:
+            _copy_entry(local_root / 'bin' / entry_name, dist_bin / entry_name)
+
+        platform_source = local_root / _platform_binary_path(self.ostype, machine)
+        platform_destination = dist / _platform_binary_path(self.ostype, machine)
+        _copy_entry(platform_source, platform_destination)
+
+        dnd_source = local_root / 'bin' / 'tkdnd' / self.dndplat
+        dnd_destination = dist / 'bin' / 'tkdnd' / self.dndplat
+        _copy_entry(dnd_source, dnd_destination)
+
+        for resource_dir in ('config', 'languages', 'templates'):
+            _copy_entry(local_root / resource_dir, dist / resource_dir)
+
+        plugin_database = local_root / 'plugins' / 'plugin_db.json'
+        _copy_entry(plugin_database, dist / 'plugins' / 'plugin_db.json')
+        _copy_entry(local_root / 'LICENSE', dist / 'LICENSE')
+
+        for relative_dir in RUNTIME_DIRECTORIES:
+            (dist / relative_dir).mkdir(parents=True, exist_ok=True)
+
+        if os.name == 'posix':
+            for binary in platform_destination.rglob('*'):
+                if binary.is_file():
+                    _add_execute_bits(binary)
+            _add_execute_bits(dist / 'bin' / 'exec.sh')
+            _add_execute_bits(dist / 'tool')
+
+    def pack_zip(self, source: str | os.PathLike[str], name: str) -> None:
+        source_root = Path(source).resolve()
+        zip_path = Path(self.local) / name
+        if zip_path.exists():
+            zip_path.unlink()
+
+        if self.ostype == 'Darwin':
+            subprocess.run(
+                [
+                    '/usr/bin/ditto',
+                    '-c',
+                    '-k',
+                    '--sequesterRsrc',
+                    '--keepParent',
+                    '.',
+                    str(zip_path),
+                ],
+                cwd=source_root,
+                check=True,
+            )
+            print(f'Pack ZIP done: {zip_path}')
             return
 
-        with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as archive:
-            for root, _, files in os.walk(abs_folder_path):
-                for file in files:
-                    if file == name:
-                        continue
-                    file_path = os.path.join(root, file)
-                    if ".git" in file_path:
-                        continue
-                    print(f"Adding: {file_path}")
-                    archive.write(
-                        file_path, os.path.relpath(file_path, abs_folder_path)
-                    )
-        print("Pack Zip Done!")
+        with zipfile.ZipFile(
+            zip_path,
+            'w',
+            compression=zipfile.ZIP_DEFLATED,
+            compresslevel=9,
+        ) as archive:
+            written_directories: set[str] = set()
+
+            def add_directory(relative_path: Path) -> None:
+                normalized = relative_path.as_posix().rstrip('/') + '/'
+                if normalized in written_directories:
+                    return
+                _zip_directory_entry(archive, normalized)
+                written_directories.add(normalized)
+
+            for root, directories, files in os.walk(source_root):
+                root_path = Path(root)
+                relative_root = root_path.relative_to(source_root)
+                if relative_root.parts:
+                    add_directory(relative_root)
+                for directory in sorted(directories):
+                    add_directory(relative_root / directory)
+                for file_name in sorted(files):
+                    file_path = root_path / file_name
+                    relative_file = file_path.relative_to(source_root)
+                    archive.write(file_path, relative_file.as_posix())
+        print(f'Pack ZIP done: {zip_path}')
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build and package MIO-KITCHEN release artifacts."
+        description='Build and package MIO Kitchen release artifacts.'
     )
     parser.add_argument(
-        "command",
-        nargs="?",
-        default="build",
-        choices=("build", "grb", "ma"),
-        help="build: build binary and zip; grb: generate release body; ma: move artifacts",
+        'command',
+        nargs='?',
+        default='build',
+        choices=('build', 'grb', 'ma'),
     )
     parser.add_argument(
-        "--target-os",
-        default=os.getenv("MIO_BUILD_TARGET_OS"),
-        choices=("win", "ubuntu24.04", "macos15"),
-        help="Release target label. Windows builds require win.",
+        '--target-os',
+        default=os.getenv('MIO_BUILD_TARGET_OS'),
+        choices=('win', 'ubuntu24.04', 'macos15'),
     )
-    parser.add_argument(
-        "--skip-install",
-        action="store_true",
-        help="Skip dependency installation inside build.py; useful for CI jobs with prepared environments.",
-    )
-    parser.add_argument(
-        "--requirements-file",
-        default="requirements.txt",
-        help="Dependency file to install when --skip-install is not used.",
-    )
+    parser.add_argument('--skip-install', action='store_true')
+    parser.add_argument('--requirements-file', default='requirements.txt')
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(list(argv or sys.argv[1:]))
-    if args.command == "build":
-        Builder(
-            target_os=args.target_os,
-            skip_install=args.skip_install,
-            requirements_file=args.requirements_file,
-        ).build()
-    elif args.command == "grb":
-        Builder(target_os=args.target_os).generate_release_body()
-    elif args.command == "ma":
-        Builder(target_os=args.target_os).move_artifacts()
+    builder = Builder(
+        target_os=args.target_os,
+        skip_install=args.skip_install,
+        requirements_file=args.requirements_file,
+    )
+    if args.command == 'build':
+        builder.build()
+    elif args.command == 'grb':
+        builder.generate_release_body()
+    else:
+        builder.move_artifacts()
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())
