@@ -9,7 +9,7 @@ from src.app.runtime.contexts.plugins import resolve_module_manager
 from src.app.runtime.contexts.settings import resolve_animation
 from src.app.runtime.contexts.tooling import resolve_tool_self
 from src.app.runtime.contexts.ui import resolve_ui_host_window
-from src.platform.process_restart import build_restart_argv, run_replacement_process
+from src.platform.process_restart import build_restart_argv, launch_replacement_process
 from src.platform.crash_logging import flush_logging, operation_context
 
 
@@ -38,7 +38,11 @@ def restart(window=None, *, confirm_unsaved: ConfirmRestart | None = None) -> bo
             tool_self=resolve_tool_self(),
             original_argv=sys.argv,
         )
-        raise SystemExit(run_replacement_process(argv))
+        replacement_pid = launch_replacement_process(argv)
+        logging.getLogger(__name__).info(
+            'Replacement process launched: pid=%s',
+            replacement_pid,
+        )
 
     if window is not None:
         window.destroy()

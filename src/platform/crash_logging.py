@@ -197,6 +197,8 @@ def _main_exception_hook(
 
 
 def _thread_exception_hook(args: ExceptHookArgs) -> None:
+    if issubclass(args.exc_type, SystemExit):
+        return
     thread_name = args.thread.name if args.thread is not None else '<unknown>'
     _log_uncaught_exception(
         args.exc_type,

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import pathlib
-import subprocess
 import sys
 from collections.abc import Sequence
+
+from src.platform.process_launcher import launch_detached
 
 
 def build_restart_argv(
@@ -20,10 +21,10 @@ def build_restart_argv(
     return argv
 
 
-def run_replacement_process(argv: Sequence[str]) -> int:
-    process = subprocess.Popen(list(argv))
-    process.wait()
-    return int(process.returncode)
+def launch_replacement_process(argv: Sequence[str]) -> int:
+    """Launch the replacement instance without waiting for it to exit."""
+    process = launch_detached(list(argv))
+    return int(process.pid)
 
 
-__all__ = ["build_restart_argv", "run_replacement_process"]
+__all__ = ["build_restart_argv", "launch_replacement_process"]
