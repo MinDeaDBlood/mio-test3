@@ -22,6 +22,7 @@ from src.platform.runtime_directories import ensure_runtime_directories, prepare
 from src.platform.crash_logging import (
     install_tk_exception_logging,
     log_startup_phase,
+    start_startup_watchdog,
     stop_startup_watchdog,
 )
 
@@ -69,25 +70,66 @@ def restart(window=None):
     )
 
 
-def _show_welcome_if_needed() -> None:
-    if int(require_settings().oobe) < 5:
-        from src.app.composition.welcome import open_welcome
+def _close_startup_splash_for_interaction(startup_splash, *, phase: str):
+    if startup_splash is None:
+        return None
+    startup_splash.close()
+    log_startup_phase(phase)
+    return None
 
-        open_welcome()
+
+def _run_startup_modal_interaction(*, name: str, callback) -> None:
+    stop_startup_watchdog()
+    log_startup_phase(f"{name} opened")
+    try:
+        callback()
+    finally:
+        log_startup_phase(f"{name} closed")
+        start_startup_watchdog()
 
 
-def _maybe_run_updater() -> None:
+def _show_welcome_if_needed(startup_splash):
+    if int(require_settings().oobe) >= 5:
+        return startup_splash
+
+    from src.app.composition.welcome import open_welcome
+
+    startup_splash = _close_startup_splash_for_interaction(
+        startup_splash,
+        phase="application startup splash closed before welcome wizard",
+    )
+    _run_startup_modal_interaction(
+        name="welcome wizard",
+        callback=open_welcome,
+    )
+    return startup_splash
+
+
+def _maybe_run_updater(startup_splash):
     if require_settings().updating != "true":
-        return
+        return startup_splash
     from src.app.update import open_updater
 
     updater = open_updater()
     if updater is None:
-        return
-    try:
-        updater.wait_window()
-    except Exception:
-        logging.exception("Cannot wait the Updater.Maybe the step completed.")
+        return startup_splash
+
+    startup_splash = _close_startup_splash_for_interaction(
+        startup_splash,
+        phase="application startup splash closed before updater",
+    )
+
+    def wait_for_updater() -> None:
+        try:
+            updater.wait_window()
+        except Exception:
+            logging.exception("Cannot wait for the updater window")
+
+    _run_startup_modal_interaction(
+        name="updater window",
+        callback=wait_for_updater,
+    )
+    return startup_splash
 
 
 def _finalize_main_window(main_window) -> None:
@@ -220,9 +262,9 @@ def _init_tk(args: list):
     if is_pro:
         verify.verify(settings.active_code)
     timeline.mark("settings_load")
-    _maybe_run_updater()
+    startup_splash = _maybe_run_updater(startup_splash)
     timeline.mark("updater_gate")
-    _show_welcome_if_needed()
+    startup_splash = _show_welcome_if_needed(startup_splash)
     timeline.mark("welcome_interaction", excluded_from_total=True)
     init_verify()
     timeline.mark("init_verify")
