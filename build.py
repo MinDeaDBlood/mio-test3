@@ -138,9 +138,13 @@ def _splash_path(ostype: str, machine_name: str) -> Optional[str]:
 
 def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> List[str]:
     machine_name = machine or platform.machine()
+    bundle_mode = ["--onedir", "--windowed"] if ostype == "Darwin" else [
+        "--onefile",
+        "--windowed",
+    ]
     args = [
         "tool.py",
-        "-Fw",
+        *bundle_mode,
         "--specpath",
         "build",
         "--collect-data",
@@ -157,10 +161,15 @@ def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> List[s
     for excluded_module in PYINSTALLER_EXCLUDES:
         args.extend(["--exclude-module", excluded_module])
     if ICON_PATH.exists():
-        args[4:4] = ["-i", str(ICON_PATH.resolve())]
-    splash_path = _splash_path(ostype, machine_name)
-    if splash_path:
-        args.extend(["--splash", splash_path])
+        args.extend(["--icon", str(ICON_PATH.resolve())])
+
+    # PyInstaller splash screens are unsupported on macOS. Windows and Linux
+    # keep the existing splash behavior, including the LoongArch image.
+    if ostype != "Darwin":
+        splash_path = _splash_path(ostype, machine_name)
+        if splash_path:
+            args.extend(["--splash", splash_path])
+
     args.extend(build_source_data_args("src"))
     return args
 
@@ -374,6 +383,26 @@ class Builder:
     def pack_zip(self, source, name):
         abs_folder_path = os.path.abspath(source)
         zip_file_path = os.path.join(self.local, name)
+
+        if self.ostype == "Darwin":
+            # Preserve the .app bundle layout, symlinks, permissions, and macOS
+            # metadata. Python's zipfile module does not reliably preserve all
+            # of those details for an onedir application bundle.
+            subprocess.run(
+                [
+                    "/usr/bin/ditto",
+                    "-c",
+                    "-k",
+                    "--sequesterRsrc",
+                    ".",
+                    zip_file_path,
+                ],
+                cwd=abs_folder_path,
+                check=True,
+            )
+            print("Pack Zip Done!")
+            return
+
         with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as archive:
             for root, _, files in os.walk(abs_folder_path):
                 for file in files:
