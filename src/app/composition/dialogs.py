@@ -7,6 +7,10 @@ import os
 from src.app.localization_runtime import lang
 
 
+
+def _resolve_window_owner() -> Any:
+    return import_module('src.ui.common.windowing').resolve_window_owner()
+
 def _warn_dialogs() -> Any:
     return import_module('src.ui.warn.dialogs')
 
@@ -28,12 +32,14 @@ def warn_win(*args: Any, **kwargs: Any) -> Any:
 
 def choose_file(*args: Any, **kwargs: Any) -> str:
     if os.name == 'nt':
+        kwargs.setdefault('parent', _resolve_window_owner())
         return import_module('tkinter.filedialog').askopenfilename(*args, **kwargs)
     return import_module('src.app.composition.file_dialog').choose_file(*args, **kwargs)
 
 
 def choose_directory(*args: Any, **kwargs: Any) -> str:
     if os.name == 'nt':
+        kwargs.setdefault('parent', _resolve_window_owner())
         return import_module('tkinter.filedialog').askdirectory(*args, **kwargs)
     return import_module('src.app.composition.file_dialog').choose_directory(*args, **kwargs)
 

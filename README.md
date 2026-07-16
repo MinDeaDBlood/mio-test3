@@ -115,6 +115,10 @@ python3 config chksupd
 
 
 
+## Documentation
+
+The documentation index is available at `docs/README.md`. Tests, scripts, Ruff and Mypy are described in `docs/development/tests_and_scripts.md`.
+
 ## Quality checks
 
 Run the architecture and typed boundary checks before changing runtime or plugin integration code.
@@ -125,7 +129,7 @@ python scripts/arch_guard/main.py
 python scripts/manual/manual_unit_contracts.py
 ```
 
-The typed boundary check validates Plugin Store models, dynamic plugin metadata, application ports, Tk scheduling and background task contracts. See `TYPED_BOUNDARIES.md` for the exact boundary rules.
+The typed boundary check validates Plugin Store models, dynamic plugin metadata, application ports, Tk scheduling and background task contracts. See `docs/architecture/typed_boundaries.md` for the exact boundary rules.
 
 ## Start To Use
 > [!NOTE]

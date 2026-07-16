@@ -5,6 +5,7 @@ from tkinter import ttk
 
 from src.ui.common.dnd import Tk as _MainWindowBase
 from src.ui.common.window_appearance import register_window
+from src.ui.common.windowing import register_main_window
 from src.ui import main_window_keys as keys
 from src.ui.warn.dialogs import warn_win
 from src.ui.window_sections.main_window_presenter import (
@@ -23,6 +24,7 @@ class Tool(_MainWindowBase):
         from src.ui.common.themes.sv_ttk_fixes import do_set_window_deffont
 
         super().__init__(tkdnd_library_root=tkdnd_library_root)
+        register_main_window(self)
         register_window(self)
         self._texts = texts
         self.rotate_angle = 0

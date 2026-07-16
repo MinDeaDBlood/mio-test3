@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.ui.common.windowing import Toplevel
+from src.ui.common.windowing import Toplevel, resolve_window_owner
 
 
 def themed_toplevel(parent=None):
@@ -11,9 +11,7 @@ def themed_toplevel(parent=None):
 
 
 def resolve_parent(master=None):
-    if master is None:
-        return None
-    return master if master.winfo_exists() else None
+    return resolve_window_owner(master)
 
 
 def close_modal(window):

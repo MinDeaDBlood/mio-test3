@@ -44,6 +44,7 @@ class FileChooser(Toplevel):
 
     def _choose_file(self, target: StringVar, *, title: str) -> None:
         selected = askopenfilename(
+            parent=self,
             initialdir=self._initial_directory,
             title=title,
         )
@@ -218,6 +219,7 @@ class MtkPortPanel(ttk.Labelframe):
 
     def _choose_magisk_apk(self, _event=None) -> None:
         selected = askopenfilename(
+            parent=self,
             initialdir=self._initial_directory,
             title=self._text(keys.MAGISK_APK_SELECT_TITLE),
         )
