@@ -2,13 +2,12 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-import platform
 import os
 import sys
 import tempfile
 import time
 import traceback
+from pathlib import Path
 from types import TracebackType
 
 
@@ -16,7 +15,7 @@ def _resolve_root() -> Path:
     if getattr(sys, 'frozen', False):
         executable_parent = Path(sys.executable).resolve().parent
         if (
-            platform.system() == 'Darwin'
+            sys.platform == 'darwin'
             and executable_parent.name == 'MacOS'
             and executable_parent.parent.name == 'Contents'
             and executable_parent.parent.parent.suffix == '.app'
@@ -77,6 +76,8 @@ def _bootstrap_note(message: str) -> None:
 
 
 _ACTIVE_LOG_PATH: Path | None = _create_bootstrap_log()
+if _ACTIVE_LOG_PATH is not None:
+    os.environ['MIO_ACTIVE_LOG_PATH'] = str(_ACTIVE_LOG_PATH)
 
 
 def _write_local_emergency(phase: str, exception: BaseException) -> Path | None:

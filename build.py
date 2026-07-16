@@ -17,7 +17,7 @@ import zipfile
 from typing import Optional
 
 RELEASE_TARGETS = {'win', 'ubuntu24.04', 'macos15'}
-PYINSTALLER_PATHS = ['.', 'src', 'src/core']
+PYINSTALLER_PATHS = ['.']
 PYINSTALLER_HIDDEN_IMPORTS = [
     'tkinter',
     'PIL',
@@ -125,9 +125,10 @@ def _startup_splash_path(ostype: str, machine: str) -> Path:
 
 def build_pyinstaller_args(ostype: str, machine: Optional[str] = None) -> list[str]:
     machine_name = machine or platform.machine()
+    bundle_mode = '--onedir' if ostype == 'Darwin' else '--onefile'
     args = [
         'tool.py',
-        '--onedir',
+        bundle_mode,
         '--windowed',
         '--clean',
         '--noconfirm',
@@ -322,10 +323,7 @@ class Builder:
         )
 
     def release_root(self) -> Path:
-        dist = Path(self.local) / 'dist'
-        if self.ostype == 'Darwin':
-            return dist
-        return dist / 'tool'
+        return Path(self.local) / 'dist'
 
     def _executable_path(self, release_root: Path) -> Path:
         if self.ostype == 'Windows':
@@ -339,8 +337,6 @@ class Builder:
         missing: list[str] = []
         if not executable.is_file():
             missing.append(str(executable))
-        if self.ostype != 'Darwin' and not (release_root / '_internal').is_dir():
-            missing.append(str(release_root / '_internal'))
         for relative_dir in RUNTIME_DIRECTORIES:
             if not (release_root / relative_dir).is_dir():
                 missing.append(str(release_root / relative_dir))
