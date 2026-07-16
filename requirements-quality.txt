@@ -2,3 +2,5 @@
 # This file is not installed by the release workflow and is not shipped in user builds.
 mypy==1.18.2
 ruff==0.12.2
+
+pytest==9.0.2

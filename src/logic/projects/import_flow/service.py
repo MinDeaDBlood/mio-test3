@@ -23,7 +23,7 @@ from src.logic.projects.import_flow.format_handlers import (
 from src.logic.projects.import_flow.generic_file_import import import_known_file
 from src.logic.projects.import_flow.models import ProjectImportResult
 from src.logic.projects.import_flow.project_folder_import import import_project_folder
-from src.logic.projects.import_flow.script_fs import script2fs
+from src.logic.projects.import_flow.fs_config_conversion import script2fs
 from src.logic.projects.import_flow.workspace import (
     ensure_import_workspace,
 )

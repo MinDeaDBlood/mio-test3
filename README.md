@@ -122,7 +122,7 @@ Run the architecture and typed boundary checks before changing runtime or plugin
 ```shell
 python scripts/quality/check_typed_boundaries.py
 python scripts/arch_guard/main.py
-pytest -q
+python scripts/manual/manual_unit_contracts.py
 ```
 
 The typed boundary check validates Plugin Store models, dynamic plugin metadata, application ports, Tk scheduling and background task contracts. See `TYPED_BOUNDARIES.md` for the exact boundary rules.

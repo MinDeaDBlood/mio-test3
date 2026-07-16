@@ -3,7 +3,7 @@ pycryptodome>=3.19.1
 Requests>2.31.0
 protobuf>6
 sv_ttk
-pyinstaller
+pyinstaller>=6.9
 chlorophyll
 future
 pip>=25.3

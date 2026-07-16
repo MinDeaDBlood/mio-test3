@@ -8,7 +8,7 @@ from src.core.file_types import gettype
 from src.logic.common.messages import message
 from src.logic.projects.import_flow.auto_unpack import list_auto_unpack_candidates
 from src.logic.projects.import_flow.models import ProjectImportResult
-from src.logic.projects.import_flow.script_fs import script2fs as default_script2fs
+from src.logic.projects.import_flow.fs_config_conversion import script2fs as default_script2fs
 from src.logic.projects.import_flow.workspace import (
     build_import_unpack_runtime,
     ensure_import_workspace,
