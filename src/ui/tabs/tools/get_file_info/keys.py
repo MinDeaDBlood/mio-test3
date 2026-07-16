@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+TITLE = "tools_get_file_info_window_title"
+DROP_GROUP_TITLE = "tools_get_file_info_window_drop_group_title"
+DROP_HINT = "tools_get_file_info_window_drop_hint"
+INFORMATION_GROUP_TITLE = "tools_get_file_info_window_information_group_title"
+MISSING_FILE_ROW_LABEL = "tools_get_file_info_window_missing_file_row_label"
+MISSING_FILE_MESSAGE = "tools_get_file_info_window_missing_file_message"
+NAME_ROW_LABEL = "tools_get_file_info_window_name_row_label"
+PATH_ROW_LABEL = "tools_get_file_info_window_path_row_label"
+TYPE_ROW_LABEL = "tools_get_file_info_window_type_row_label"
+HUMAN_SIZE_ROW_LABEL = "tools_get_file_info_window_human_size_row_label"
+BYTE_SIZE_ROW_LABEL = "tools_get_file_info_window_byte_size_row_label"
+CREATED_TIME_ROW_LABEL = "tools_get_file_info_window_created_time_row_label"
+MISSING_FILE_COPY_BUTTON = "tools_get_file_info_window_missing_file_copy_button"
+MISSING_FILE_COPIED_BUTTON = "tools_get_file_info_window_missing_file_copied_button"
+NAME_COPY_BUTTON = "tools_get_file_info_window_name_copy_button"
+NAME_COPIED_BUTTON = "tools_get_file_info_window_name_copied_button"
+PATH_COPY_BUTTON = "tools_get_file_info_window_path_copy_button"
+PATH_COPIED_BUTTON = "tools_get_file_info_window_path_copied_button"
+TYPE_COPY_BUTTON = "tools_get_file_info_window_type_copy_button"
+TYPE_COPIED_BUTTON = "tools_get_file_info_window_type_copied_button"
+HUMAN_SIZE_COPY_BUTTON = "tools_get_file_info_window_human_size_copy_button"
+HUMAN_SIZE_COPIED_BUTTON = "tools_get_file_info_window_human_size_copied_button"
+BYTE_SIZE_COPY_BUTTON = "tools_get_file_info_window_byte_size_copy_button"
+BYTE_SIZE_COPIED_BUTTON = "tools_get_file_info_window_byte_size_copied_button"
+CREATED_TIME_COPY_BUTTON = "tools_get_file_info_window_created_time_copy_button"
+CREATED_TIME_COPIED_BUTTON = "tools_get_file_info_window_created_time_copied_button"
+
+FILE_DIALOG_TITLE = "tools_get_file_info_window_file_dialog_title"
+FILE_DIALOG_ALL_FILES = "tools_get_file_info_window_file_dialog_all_files"
+
+__all__ = [name for name in globals() if name.isupper()]

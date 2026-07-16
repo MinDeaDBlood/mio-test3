@@ -1,0 +1,16 @@
+"""Small dependency neutral protocols shared across project layers."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+
+class LoggerProtocol(Protocol):
+    def debug(self, message: str, *args: object, **kwargs: object) -> object: ...
+    def info(self, message: str, *args: object, **kwargs: object) -> object: ...
+    def warning(self, message: str, *args: object, **kwargs: object) -> object: ...
+    def error(self, message: str, *args: object, **kwargs: object) -> object: ...
+    def exception(self, message: str, *args: object, **kwargs: object) -> object: ...
+
+
+__all__ = ['LoggerProtocol']

@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+ATTRIBUTE_GROUP_TITLE = "project_pack_super_window_attribute_group_title"
+ATTRIBUTE_READONLY_OPTION = "project_pack_super_window_attribute_readonly_option"
+ATTRIBUTE_NONE_OPTION = "project_pack_super_window_attribute_none_option"
+LAYOUT_A_ONLY_OPTION = "project_pack_super_window_layout_a_only_option"
+LAYOUT_VIRTUAL_AB_OPTION = "project_pack_super_window_layout_virtual_ab_option"
+LAYOUT_AB_OPTION = "project_pack_super_window_layout_ab_option"
+SELECT_ALL_CHECKBOX = "project_pack_super_window_select_all_checkbox"
+REFRESH_BUTTON = "project_pack_super_window_refresh_button"
+CANCEL_BUTTON = "project_pack_super_window_cancel_button"
+PACK_BUTTON = "project_pack_super_window_pack_button"
+PROJECT_REQUIRED_MESSAGE = "project_pack_super_window_project_required_message"
+PROJECT_REQUIRED_DIALOG_TITLE = (
+    "project_pack_super_window_project_required_dialog_title"
+)
+PROJECT_REQUIRED_DIALOG_OK_BUTTON = (
+    "project_pack_super_window_project_required_dialog_ok_button"
+)
+PACK_FAILED_MESSAGE = "project_pack_super_window_pack_failed_message"
+IMAGE_MISSING_MESSAGE = "project_pack_super_window_image_missing_message"
+IMAGE_MISSING_DIALOG_TITLE = "project_pack_super_window_image_missing_dialog_title"
+IMAGE_MISSING_DIALOG_OK_BUTTON = (
+    "project_pack_super_window_image_missing_dialog_ok_button"
+)
+SIZE_TOO_SMALL_CONFIRM_BUTTON = (
+    "project_pack_super_window_size_too_small_confirm_button"
+)
+SIZE_TOO_SMALL_CANCEL_BUTTON = "project_pack_super_window_size_too_small_cancel_button"
+GENERATE_FAILED_DIALOG_TITLE = "project_pack_super_window_generate_failed_dialog_title"
+GENERATE_FAILED_DIALOG_OK_BUTTON = (
+    "project_pack_super_window_generate_failed_dialog_ok_button"
+)
+RESULT_OUTPUT_FORMAT = "project_pack_super_result_output_format"
+RESULT_FORMAT_FORMAT = "project_pack_super_result_format_format"
+RESULT_LOGICAL_SIZE_FORMAT = "project_pack_super_result_logical_size_format"
+RESULT_PHYSICAL_SIZE_FORMAT = "project_pack_super_result_physical_size_format"
+RESULT_REQUESTED_DEVICE_SIZE_FORMAT = (
+    "project_pack_super_result_requested_device_size_format"
+)
+RESULT_REPORT_FORMAT = "project_pack_super_result_report_format"
+RESULT_ANDROID_SPARSE_FORMAT_NAME = (
+    "project_pack_super_result_android_sparse_format_name"
+)
+RESULT_RAW_FORMAT_NAME = "project_pack_super_result_raw_format_name"
+
+PROJECT_PACK_SUPER_WINDOW_CREATE_SPARSE_IMAGE = 'project_pack_super_window_create_sparse_image'
+PROJECT_PACK_SUPER_WINDOW_GENERATE_LIST = 'project_pack_super_window_generate_list'
+PROJECT_PACK_SUPER_WINDOW_GROUP_NAME = 'project_pack_super_window_group_name'
+PROJECT_PACK_SUPER_WINDOW_INCLUDED_PARTITIONS = 'project_pack_super_window_included_partitions'
+PROJECT_PACK_SUPER_WINDOW_PACK_OUTPUT_SUCCESS_FORMAT = 'project_pack_super_window_pack_output_success_format'
+PROJECT_PACK_SUPER_WINDOW_PACK_SUPER = 'project_pack_super_window_pack_super'
+PROJECT_PACK_SUPER_WINDOW_PACK_SUPER_SIZE_TOO_SMALL = 'project_pack_super_window_pack_super_size_too_small'
+PROJECT_PACK_SUPER_WINDOW_PARTITION_LAYOUT = 'project_pack_super_window_partition_layout'
+PROJECT_PACK_SUPER_WINDOW_REMOVE_ORIGINAL_FILE = 'project_pack_super_window_remove_original_file'
+PROJECT_PACK_SUPER_WINDOW_SUPER_SIZE = 'project_pack_super_window_super_size'
+PROJECT_PACK_SUPER_WINDOW_WORKING = 'project_pack_super_window_working'
+PROJECT_PACK_SUPER_WINDOW_SETTINGS_GROUP_TITLE = 'project_pack_super_window_settings_group_title'
+
+__all__ = [name for name in globals() if name.isupper()]

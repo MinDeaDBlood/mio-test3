@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+TITLE = "tools_magisk_patch_window_title"
+HEADING = "tools_magisk_patch_window_heading"
+BOOT_IMAGE_LABEL = "tools_magisk_patch_window_boot_image_label"
+BOOT_IMAGE_BROWSE_BUTTON = "tools_magisk_patch_window_boot_image_browse_button"
+MAGISK_APK_LABEL = "tools_magisk_patch_window_magisk_apk_label"
+MAGISK_APK_BROWSE_BUTTON = "tools_magisk_patch_window_magisk_apk_browse_button"
+ARCHITECTURE_LABEL = "tools_magisk_patch_window_architecture_label"
+PATCH_BUTTON = "tools_magisk_patch_window_patch_button"
+RUNNING_BUTTON = "tools_magisk_patch_window_running_button"
+SELECT_APK_DIALOG_TITLE = "tools_magisk_patch_window_select_apk_dialog_title"
+SELECT_APK_DIALOG_APK_FILES = "tools_magisk_patch_window_select_apk_dialog_apk_files"
+SELECT_APK_DIALOG_ALL_FILES = "tools_magisk_patch_window_select_apk_dialog_all_files"
+SELECT_BOOT_DIALOG_TITLE = "tools_magisk_patch_window_select_boot_dialog_title"
+SELECT_BOOT_DIALOG_IMAGE_FILES = (
+    "tools_magisk_patch_window_select_boot_dialog_image_files"
+)
+SELECT_BOOT_DIALOG_ALL_FILES = "tools_magisk_patch_window_select_boot_dialog_all_files"
+ARCHITECTURE_READ_FAILED_MESSAGE = (
+    "tools_magisk_patch_window_architecture_read_failed_message"
+)
+SUCCESS_MESSAGE = "tools_magisk_patch_window_success_message"
+FAILURE_MESSAGE = "tools_magisk_patch_window_failure_message"
+WARNING_DIALOG_TITLE = "tools_magisk_patch_window_warning_dialog_title"
+WARNING_DIALOG_OK_BUTTON = "tools_magisk_patch_window_warning_dialog_ok_button"
+SUCCESS_DIALOG_TITLE = "tools_magisk_patch_window_success_dialog_title"
+SUCCESS_DIALOG_OK_BUTTON = "tools_magisk_patch_window_success_dialog_ok_button"
+IS_64BIT_OPTION_LABEL = "tools_magisk_patch_window_is_64bit_option_label"
+KEEP_VERITY_OPTION_LABEL = "tools_magisk_patch_window_keep_verity_option_label"
+KEEP_FORCE_ENCRYPT_OPTION_LABEL = (
+    "tools_magisk_patch_window_keep_force_encrypt_option_label"
+)
+RECOVERY_MODE_OPTION_LABEL = "tools_magisk_patch_window_recovery_mode_option_label"
+
+__all__ = [name for name in globals() if name.isupper()]

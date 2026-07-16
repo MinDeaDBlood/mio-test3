@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+UNSUPPORTED_PLATFORM_MESSAGE_FORMAT = (
+    "plugins_installer_window_unsupported_platform_message_format"
+)
+BROKEN_PACKAGE_MESSAGE = "plugins_installer_window_broken_package_message"
+UNAVAILABLE_PACKAGE_NAME = "plugins_installer_window_unavailable_package_name"
+
+PLUGINS_INSTALLER_WINDOW_AUTHOR_FORMAT = 'plugins_installer_window_author_format'
+PLUGINS_INSTALLER_WINDOW_FINISH = 'plugins_installer_window_finish'
+PLUGINS_INSTALLER_WINDOW_INSTALL_ACTION = 'plugins_installer_window_install_action'
+PLUGINS_INSTALLER_WINDOW_INSTALLATION_COMPLETE = 'plugins_installer_window_installation_complete'
+PLUGINS_INSTALLER_WINDOW_PLUGIN_DEPENDENCY_MISSING_FORMAT = 'plugins_installer_window_plugin_dependency_missing_format'
+PLUGINS_INSTALLER_WINDOW_PLUGIN_INSTALLATION_TITLE = 'plugins_installer_window_plugin_installation_title'
+PLUGINS_INSTALLER_WINDOW_READY = 'plugins_installer_window_ready'
+PLUGINS_INSTALLER_WINDOW_RETRY = 'plugins_installer_window_retry'
+PLUGINS_INSTALLER_WINDOW_VERSION_FORMAT = 'plugins_installer_window_version_format'
+
+__all__ = [name for name in globals() if name.isupper()]

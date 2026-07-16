@@ -1,0 +1,32 @@
+from __future__ import annotations
+
+TITLE = "tools_mtk_port_window_title"
+TOOL_GROUP_TITLE = "tools_mtk_port_window_tool_group_title"
+SOC_TYPE_LABEL = "tools_mtk_port_window_soc_type_label"
+SUPPORTED_ACTIONS_GROUP_TITLE = "tools_mtk_port_window_supported_actions_group_title"
+PORT_BUTTON = "tools_mtk_port_window_port_button"
+OUTPUT_ZIP_RADIO = "tools_mtk_port_window_output_zip_radio"
+OUTPUT_IMAGE_RADIO = "tools_mtk_port_window_output_image_radio"
+PATCH_MAGISK_CHECKBOX = "tools_mtk_port_window_patch_magisk_checkbox"
+NO_ACTIONS_MESSAGE = "tools_mtk_port_window_no_actions_message"
+COMPLETE_MESSAGE = "tools_mtk_port_window_complete_message"
+PROFILES_MISSING_ERROR = "tools_mtk_port_window_profiles_missing_error"
+WARNING_DIALOG_TITLE = "tools_mtk_port_window_warning_dialog_title"
+WARNING_DIALOG_OK_BUTTON = "tools_mtk_port_window_warning_dialog_ok_button"
+INFORMATION_DIALOG_TITLE = "tools_mtk_port_window_information_dialog_title"
+INFORMATION_DIALOG_OK_BUTTON = "tools_mtk_port_window_information_dialog_ok_button"
+FILE_DIALOG_TITLE = "tools_mtk_port_file_dialog_title"
+PORT_ROM_LABEL = "tools_mtk_port_file_dialog_port_rom_label"
+PORT_ROM_BROWSE_BUTTON = "tools_mtk_port_file_dialog_port_rom_browse_button"
+BOOT_IMAGE_LABEL = "tools_mtk_port_file_dialog_boot_image_label"
+BOOT_IMAGE_BROWSE_BUTTON = "tools_mtk_port_file_dialog_boot_image_browse_button"
+SYSTEM_IMAGE_LABEL = "tools_mtk_port_file_dialog_system_image_label"
+SYSTEM_IMAGE_BROWSE_BUTTON = "tools_mtk_port_file_dialog_system_image_browse_button"
+FILE_DIALOG_OK_BUTTON = "tools_mtk_port_file_dialog_ok_button"
+
+PORT_ROM_SELECT_TITLE = "tools_mtk_port_file_dialog_port_rom_select_title"
+BOOT_IMAGE_SELECT_TITLE = "tools_mtk_port_file_dialog_boot_image_select_title"
+SYSTEM_IMAGE_SELECT_TITLE = "tools_mtk_port_file_dialog_system_image_select_title"
+MAGISK_APK_SELECT_TITLE = "tools_mtk_port_window_magisk_apk_select_title"
+
+__all__ = [name for name in globals() if name.isupper()]

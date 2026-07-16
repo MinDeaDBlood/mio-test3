@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+TITLE = "tools_merge_super_window_title"
+DESCRIPTION = "tools_merge_super_window_description"
+NO_PROJECT_PATH_TEXT = "tools_merge_super_window_no_project_path_text"
+PROJECT_PATH_LABEL = "tools_merge_super_window_project_path_label"
+OUTPUT_PATH_LABEL = "tools_merge_super_window_output_path_label"
+OUTPUT_FILENAME_LABEL = "tools_merge_super_window_output_filename_label"
+DELETE_SOURCE_CHECKBOX = "tools_merge_super_window_delete_source_checkbox"
+RUN_BUTTON = "tools_merge_super_window_run_button"
+SELECT_PROJECT_MESSAGE = "tools_merge_super_window_select_project_message"
+PROJECT_NOT_SELECTED_MESSAGE = "tools_merge_super_window_project_not_selected_message"
+OUTPUT_FILENAME_REQUIRED_MESSAGE = (
+    "tools_merge_super_window_output_filename_required_message"
+)
+SUCCESS_MESSAGE = "tools_merge_super_window_success_message"
+NO_SEGMENTS_MESSAGE = "tools_merge_super_window_no_segments_message"
+OUTPUT_EXISTS_MESSAGE = "tools_merge_super_window_output_exists_message"
+SIMG2IMG_MISSING_MESSAGE = "tools_merge_super_window_simg2img_missing_message"
+UNEXPECTED_ERROR_MESSAGE = "tools_merge_super_window_unexpected_error_message"
+FAILED_BUTTON = "tools_merge_super_window_failed_button"
+RUNNING_PROGRESS_FORMAT = "tools_merge_super_window_running_progress_format"
+WARNING_DIALOG_TITLE = "tools_merge_super_window_warning_dialog_title"
+WARNING_DIALOG_OK_BUTTON = "tools_merge_super_window_warning_dialog_ok_button"
+INFORMATION_DIALOG_TITLE = "tools_merge_super_window_information_dialog_title"
+INFORMATION_DIALOG_OK_BUTTON = "tools_merge_super_window_information_dialog_ok_button"
+
+__all__ = [name for name in globals() if name.isupper()]

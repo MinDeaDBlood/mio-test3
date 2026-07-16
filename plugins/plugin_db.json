@@ -1,0 +1,735 @@
+[
+    {
+        "name": "MOOS",
+        "desc": "\u6b64\u6a21\u5757\u5c06\u5bf9[odm][product][system][system_ext][vendor]\u5206\u533a\u8fdb\u884c\u5904\u7406\u3002\u914d\u7f6e\u6587\u4ef6\u5728\u6a21\u5757\u6587\u4ef6\u5939/MO_conf.txt\u3002\u4ec5\u5bf9\u56fa\u4ef6\u505a\u6df1\u5ea6\u4f18\u5316\u5904\u7406\uff0c\u4e0d\u63d0\u4f9b\u7834\u89e3\u6821\u9a8c\u7b49\u529f\u80fd\u3002",
+        "author": "[\u6b23\u604b]Seylia",
+        "version": "2.4.0",
+        "size": 2402766,
+        "id": "MOOS",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "[2.4.0]MOOS.mpk"
+        ]
+    },
+    {
+        "name": "Apk Modifier",
+        "desc": "This's a plugin to Unpack and Repack Apk file.",
+        "author": "MIO-KITCHEN",
+        "version": "1.0",
+        "size": 4094616,
+        "id": "apk.modifier.mkc",
+        "depend": [
+            "java",
+            "apktool"
+        ],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "Apk Modifier.mpk"
+        ]
+    },
+    {
+        "name": "Apktool",
+        "desc": "\u5b83\u662f\u7528\u4e8e\u9006\u5411\u5de5\u7a0b\u7b2c\u4e09\u65b9\uff0c\u5c01\u95ed\uff0c\u4e8c\u8fdb\u5236Android\u5e94\u7528\u7a0b\u5e8f\u7684\u5de5\u5177\u3002\u5b83\u53ef\u4ee5\u5c06\u8d44\u6e90\u89e3\u7801\u4e3a\u51e0\u4e4e\u539f\u59cb\u7684\u5f62\u5f0f\uff0c\u5e76\u5728\u8fdb\u884c\u4e00\u4e9b\u4fee\u6539\u540e\u91cd\u5efa\u5b83\u4eec;\u5b83\u53ef\u4ee5\u9010\u6b65\u8c03\u8bd5 Smali \u4ee3\u7801\u3002\u6b64\u5916\uff0c\u7531\u4e8e\u7c7b\u4f3c\u9879\u76ee\u7684\u6587\u4ef6\u7ed3\u6784\u548c\u4e00\u4e9b\u91cd\u590d\u6027\u4efb\u52a1\uff08\u5982\u6784\u5efa apk \u7b49\uff09\u7684\u81ea\u52a8\u5316\uff0c\u5b83\u4f7f\u4f7f\u7528\u5e94\u7528\u7a0b\u5e8f\u66f4\u5bb9\u6613\u3002\u5b83\u4e0d\u7528\u4e8e\u76d7\u7248\u548c\u5176\u4ed6\u975e\u5408\u6cd5\u7528\u9014\u3002\u5b83\u53ef\u7528\u4e8e\u672c\u5730\u5316\uff0c\u6dfb\u52a0\u4e00\u4e9b\u529f\u80fd\u6216\u652f\u6301\u81ea\u5b9a\u4e49\u5e73\u53f0\u548c\u5176\u4ed6\u826f\u597d\u76ee\u7684\u3002\u53ea\u8981\u5c3d\u91cf\u516c\u5e73\u5bf9\u5f85\u60a8\u4f7f\u7528\u5e76\u53ef\u80fd\u559c\u6b22\u7684\u5e94\u7528\u7a0b\u5e8f\u7684\u4f5c\u8005\u3002",
+        "author": "Connor Tumbleson",
+        "version": "2.7.0",
+        "size": 22909212,
+        "id": "apktool",
+        "depend": [
+            "java"
+        ],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "Apktool.mpk"
+        ]
+    },
+    {
+        "name": "boot\u5bbd\u5bb9",
+        "desc": "boot\u5bbd\u5bb9",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 741,
+        "id": "preboot",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "boot\u5bbd\u5bb9.mpk"
+        ]
+    },
+    {
+        "name": "build.prop\u4f18\u5316",
+        "desc": "\u6dfb\u52a0build.prop\u4f18\u5316\u4ee3\u7801",
+        "author": "\u5218\u5148\u751f",
+        "version": "1",
+        "size": 1815,
+        "id": "3iDfnh",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "build.prop\u4f18\u5316.mpk"
+        ]
+    },
+    {
+        "name": "en_super\u5206\u6bb5\u5408\u5e76",
+        "desc": "en_super\u5206\u6bb5\u5408\u5e76",
+        "author": "D.X.Y_i",
+        "version": "1.0",
+        "size": 49974,
+        "id": "DXY_MEU",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "en_super\u5206\u6bb5\u5408\u5e76.mpk"
+        ]
+    },
+    {
+        "name": "EXT3\u89e3\u5305",
+        "desc": "EXT3\u89e3\u5305 \u4fee\u590dMKC\u7684\u529f\u80fd\u7f3a\u9677",
+        "author": "\u5bd2\u98ce\u5c45\u58eb",
+        "version": "1.0",
+        "size": 1165768,
+        "id": "8iMR7J",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "EXT3\u89e3\u5305.mpk"
+        ]
+    },
+    {
+        "name": "Java\u73af\u5883",
+        "desc": "\u4e00\u4e2aJava\u8fd0\u884c\u73af\u5883\uff0c\u90e8\u5206\u63d2\u4ef6\u4f9d\u8d56\u6b64\u73af\u5883\u3002Oracle Java \u662f\u5e7f\u53d7\u6b22\u8fce\u7684\u7f16\u7a0b\u8bed\u8a00\u548c\u5f00\u53d1\u5e73\u53f0\u3002\u5b83\u6709\u52a9\u4e8e\u4f01\u4e1a\u964d\u4f4e\u6210\u672c\u3001\u7f29\u77ed\u5f00\u53d1\u5468\u671f\u3001\u63a8\u52a8\u521b\u65b0\u4ee5\u53ca\u6539\u5584\u5e94\u7528\u670d\u52a1\u3002\u5982\u4eca\uff0cJava \u4ecd\u662f\u4f01\u4e1a\u548c\u5f00\u53d1\u4eba\u5458\u7684\u9996\u9009\u5f00\u53d1\u5e73\u53f0\uff0c\u5168\u7403\u6709\u6570\u767e\u4e07\u5f00\u53d1\u4eba\u5458\u8fd0\u884c\u8d85\u8fc7 60 \u4ebf\u53f0 Java \u865a\u62df\u673a\u3002",
+        "author": "Oracle-\u7532\u9aa8\u6587",
+        "version": "18.0.2.1",
+        "size": 27664629,
+        "id": "java",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "Java\u73af\u5883.mpk"
+        ]
+    },
+    {
+        "name": "LZ4\u89e3\u5305",
+        "desc": "lz4\u89e3\u5305",
+        "author": "M.K.C",
+        "version": "1.0",
+        "size": 654,
+        "id": "lz4mm",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "lz4\u89e3\u5305.mpk"
+        ]
+    },
+    {
+        "name": "magisk-on-system",
+        "desc": "\u65e0\u9700\u4fee\u6539 Boot/Recovery \u5373\u53ef\u5b89\u88c5 Magisk",
+        "author": "\u65e9\u8336\u5149",
+        "version": "1.1fix2_20250601",
+        "size": 3869046,
+        "id": "plugin.zcg.magisk_on_system",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "magisk-on-system.mpk"
+        ]
+    },
+    {
+        "name": "MIUI14\u5b89\u535313\u5b98\u6539\u4e00\u822c\u5904\u7406[1.1]",
+        "desc": "\u53bb\u9664avb\uff0cvbmeta\uff0cmi_ext\uff0cdata\u52a0\u5bc6\uff0cAnalyticsCore\uff0c\u7cfb\u7edf\u5c42\u672a\u7b7e\u540d\u5b89\u88c5\u9650\u5236\u4ee5\u53ca\u7cbe\u7b80",
+        "author": "Kpfc\u767d\u4e2d\u767d",
+        "version": "1.0",
+        "size": 43575,
+        "id": "miui14gg",
+        "depend": [
+            "java",
+            "apktool"
+        ],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "MIUI14\u5b89\u535313\u5b98\u6539\u4e00\u822c\u5904\u7406[1.1].mpk"
+        ]
+    },
+    {
+        "name": "MIUI14\u5b98\u6539NFC\u4fee\u590d",
+        "desc": "MIUI14\u5b98\u6539NFC\u4fee\u590d",
+        "author": "Puresky",
+        "version": "1.0",
+        "size": 763,
+        "id": "5lsd7a",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "MIUI14\u5b98\u6539NFC\u4fee\u590d.mpk"
+        ]
+    },
+    {
+        "name": "MIUI14\u8d26\u53f7\u4fee\u590d",
+        "desc": "MIUI14\u8d26\u53f7\u4fee\u590d",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 3695049,
+        "id": "miui14zh",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "MIUI14\u8d26\u53f7\u4fee\u590d.mpk"
+        ]
+    },
+    {
+        "name": "MIUI\u4e3b\u9898\u9632\u6062\u590d",
+        "desc": "MIUI\u4e3b\u9898\u9632\u6062\u590d",
+        "author": "DXY",
+        "version": "1.0",
+        "size": 680,
+        "id": "dxy_miuitheme",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "MIUI\u4e3b\u9898\u9632\u6062\u590d.mpk"
+        ]
+    },
+    {
+        "name": "MIUI\u6e29\u63a7\u52a0\u89e3\u5bc6",
+        "desc": "\u652f\u6301\u4fee\u6539MIU\u6e29\u63a7\u6587\u4ef6\uff0c\u4f46\u4fee\u6539\u540e\u5fc5\u987b\u52a0\u5bc6",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 1342732,
+        "id": "miui-thermal",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "MIUI\u6e29\u63a7\u52a0\u89e3\u5bc6.mpk"
+        ]
+    },
+    {
+        "name": "MTK-BPF\u4fee\u8865",
+        "desc": "MTK-BPF\u4fee\u8865",
+        "author": "M.K.C",
+        "version": "1.0",
+        "size": 86465,
+        "id": "prbpfboot",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "MTK-BPF\u4fee\u8865.mpk"
+        ]
+    },
+    {
+        "name": "ROM\u7b7e\u540d\u5de5\u5177",
+        "desc": "\u4f7f\u7528\u6d4b\u8bd5\u5bc6\u94a5\uff082014\uff09\u7b7e\u540dROM",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 3748168,
+        "id": "signapk",
+        "depend": [
+            "java"
+        ],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "ROM\u7b7e\u540d\u5de5\u5177.mpk"
+        ]
+    },
+    {
+        "name": "T3L_TS6_TS7\u4e00\u952eroot",
+        "desc": "",
+        "author": "\u843d\u7ea2\u65e0\u60c5",
+        "version": "1.1",
+        "size": 3163627,
+        "id": "Ts367root",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "T3L_TS6_TS7\u4e00\u952eroot.mpk"
+        ]
+    },
+    {
+        "name": "TS10\u4e00\u952eroot",
+        "desc": "TS10\u4e00\u952eroot",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 807861,
+        "id": "TS10ROOT",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "TS10\u4e00\u952eroot.mpk"
+        ]
+    },
+    {
+        "name": "ts10\u4e00\u952e\u8770\u86c7\u675c\u6bd4",
+        "desc": "",
+        "author": "\u843d\u82b1\u65e0\u60c5",
+        "version": "1.0",
+        "size": 7329189,
+        "id": "ViPER4+Dsplus",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "ts10\u4e00\u952e\u8770\u86c7\u675c\u6bd4.mpk"
+        ]
+    },
+    {
+        "name": "TS6\u4e00\u952eroot",
+        "desc": "",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 3164287,
+        "id": "TS6ROOT",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "TS6\u4e00\u952eroot.mpk"
+        ]
+    },
+    {
+        "name": "ts7\u4e00\u952eroot",
+        "desc": "",
+        "author": "\u843d\u7ea2\u65e0\u60c5",
+        "version": "1.0",
+        "size": 3163610,
+        "id": "ts7root",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "ts7\u4e00\u952eroot.mpk"
+        ]
+    },
+    {
+        "name": "Xiaomi_HyperOS_Pad",
+        "desc": "Xiaomi_HyperOS_Pad \u7cbe\u7b80\u63d2\u4ef6",
+        "author": "YvanW",
+        "version": "2.0",
+        "size": 2874,
+        "id": "7AOXHb",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "Xiaomi_HyperOS_Pad.mpk"
+        ]
+    },
+    {
+        "name": "Xiaomi_HyperOS_Phone",
+        "desc": "Xiaomi_HyperOS_Phone \u7cbe\u7b80\u63d2\u4ef6",
+        "author": "YvanW",
+        "version": "2.1",
+        "size": 3155,
+        "id": "7h0sis",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "Xiaomi_HyperOS_Phone.mpk"
+        ]
+    },
+    {
+        "name": "ZSTD Integration",
+        "desc": "Create / extract ZSTD files",
+        "author": "ColdWindScholar",
+        "version": "1.0",
+        "size": 655717,
+        "id": "zstd_en",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "zstd_archiver.mpk"
+        ]
+    },
+    {
+        "name": "ZSTD\u89e3\u6253",
+        "desc": "\u89e3\u538b\u6253\u5305ZSTD",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 657357,
+        "id": "zstd",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "zstd\u89e3\u6253.mpk"
+        ]
+    },
+    {
+        "name": "\u4e00\u952e\u5904\u7406c14\u7535\u6e90\u952e\u5ef6\u8fdf\u72b6\u6001\u680f\u7535\u538b\u5f02\u5e38\u63d0\u53d6\u81eaoppofindx3",
+        "desc": "\u4e00\u952e\u5904\u7406c14\u7535\u6e90\u952e\u5ef6\u8fdf\u72b6\u6001\u680f\u7535\u538b\u5f02\u5e38\u63d0\u53d6\u81eaoppofindx3",
+        "author": "MIO-KITCHEN",
+        "version": "1.0",
+        "size": 1448566,
+        "id": "c14",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u4e00\u952e\u5904\u7406c14\u7535\u6e90\u952e\u5ef6\u8fdf\u72b6\u6001\u680f\u7535\u538b\u5f02\u5e38\u63d0\u53d6\u81eaoppofindx3.mpk"
+        ]
+    },
+    {
+        "name": "\u4e00\u952e\u5904\u7406\u6a58\u5b502.0\u539f\u5305",
+        "desc": "\u4e00\u952e\u5904\u7406\u6a58\u5b502.0\u539f\u5305",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 5886539,
+        "id": "preocean",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u4e00\u952e\u5904\u7406\u6a58\u5b502.0\u539f\u5305.mpk"
+        ]
+    },
+    {
+        "name": "\u4e00\u952e\u79fb\u690dOnePlus ColorOS15/OxygenOS15\u539f\u5305",
+        "desc": "",
+        "author": "\u5bd2\u6c34 Official",
+        "version": "1.0",
+        "size": 1790858,
+        "id": "OnePlusColorOS15Transplant",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u4e00\u952e\u79fb\u690dOnePlus ColorOS15OxygenOS15\u539f\u5305.mpk"
+        ]
+    },
+    {
+        "name": "\u4e00\u952e\u8770\u86c7\u675c\u6bd4+root",
+        "desc": "",
+        "author": "\u4e0d\u77e5\u540d\u7f51\u53cb",
+        "version": "1.0",
+        "size": 8146450,
+        "id": "ViPER4+Dsplus+root",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u4e00\u952e\u8770\u86c7\u675c\u6bd4+root.mpk"
+        ]
+    },
+    {
+        "name": "\u4e00\u952e\u9762\u5177\u65b0\u7248\u72d0\u72f8",
+        "desc": "\u4e00\u952e\u9762\u5177\u65b0\u7248\u72d0\u72f8",
+        "author": "\u7fa4\u53f7\uff1a675773466",
+        "version": "1.1",
+        "size": 12207827,
+        "id": "\u4e00\u952e\u9762\u5177\u65b0\u7248\u72d0\u72f8",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u4e00\u952e\u9762\u5177.mpk"
+        ]
+    },
+    {
+        "name": "\u53bb\u9664\u5206\u533a\u9501\u548cData\u52a0\u5bc6",
+        "desc": "\u53bb\u9664\u5206\u533a\u9501\u548cData\u52a0\u5bc6",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 1727,
+        "id": "delavbd",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u53bb\u9664AVB\u548cDATA\u52a0\u5bc6.mpk"
+        ]
+    },
+    {
+        "name": "\u53bb\u9664vbmeta\u9a8c\u8bc1",
+        "desc": "\u53bb\u9664vbmeta\u9a8c\u8bc1",
+        "author": "\u5bd2\u98ce\u5c45\u58eb",
+        "version": "1",
+        "size": 1199,
+        "id": "qcvbmetayanzheng",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u53bb\u9664vbmeta\u9a8c\u8bc1.mpk"
+        ]
+    },
+    {
+        "name": "\u53bb\u9664\u5b89\u535313\u7cfb\u7edf\u5bf9\u672a\u7b7e\u540d\u5e94\u7528\u7684\u9a8c\u8bc1",
+        "desc": "\u53bb\u9664\u5b89\u535313\u7cfb\u7edf\u5bf9\u672a\u7b7e\u540d\u5e94\u7528\u7684\u9a8c\u8bc1",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 1453,
+        "id": "harka13",
+        "depend": [
+            "apktool",
+            "java"
+        ],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u53bb\u9664\u5b89\u535313\u7cfb\u7edf\u5bf9\u672a\u7b7e\u540d\u5e94\u7528\u7684\u9a8c\u8bc1.mpk"
+        ]
+    },
+    {
+        "name": "\u79fb\u9664\u5b89\u535313\u7b7e\u540d",
+        "desc": "\u53bb\u9664\u5b89\u535313\u7cfb\u7edf\u5bf9\u672a\u7b7e\u540d\u5e94\u7528\u7684\u9a8c\u8bc1",
+        "author": "\u7c73\u6b27",
+        "version": "1.0",
+        "size": 1103,
+        "id": "az13pj",
+        "depend": [
+            "java",
+            "apktool"
+        ],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u53bb\u9664\u5b89\u535313\u7cfb\u7edf\u7b7e\u540d.mpk"
+        ]
+    },
+    {
+        "name": "\u5408\u5e76moto\u5206\u6bb5",
+        "desc": "\u5408\u5e76moto\u5206\u6bb5super\u6a21\u5757",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 826,
+        "id": "memoto",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u5408\u5e76moto\u5206\u6bb5super\u6a21\u5757.mpk"
+        ]
+    },
+    {
+        "name": "\u5408\u5e76my\u5206\u533a\u5230system",
+        "desc": "\u5408\u5e76my\u5206\u533a\u5230system",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 1169,
+        "id": "hbmy",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u5408\u5e76my\u5206\u533a\u5230system.mpk"
+        ]
+    },
+    {
+        "name": "\u5408\u5e76REC\u5230BOOT",
+        "desc": "\u5408\u5e76REC\u5230BOOT",
+        "author": "M.K.C",
+        "version": "1.0",
+        "size": 1052,
+        "id": "hbrec",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u5408\u5e76REC\u5230BOOT.mpk"
+        ]
+    },
+    {
+        "name": "\u5408\u5e76\u5206\u533a\u5230system\u5916\u5c42",
+        "desc": "\u5408\u5e76\u5176\u4ed6\u5206\u533a\u5230system\u5916\u5c42",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 1708,
+        "id": "mer_parts",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u5408\u5e76\u5206\u533a\u5230system\u5916\u5c42.mpk"
+        ]
+    },
+    {
+        "name": "\u5408\u5e76\u5206\u533a\u5230system\u5185\u5c42",
+        "desc": "\u5408\u5e76\u5176\u4ed6\u5206\u533a\u5230system\u5185\u5c42",
+        "author": "M.K.C",
+        "version": "1.0",
+        "size": 7482,
+        "id": "mer_parts_nei",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u5408\u5e76\u5206\u533a\u8fdbsystem(\u5185\u5c42).mpk"
+        ]
+    },
+    {
+        "name": "\u6781\u9650\u7cbe\u7b80\u8c28\u614e\u6d4b\u8bd5",
+        "desc": "\u6781\u9650\u7cbe\u7b80\u8c28\u614e\u6d4b\u8bd5",
+        "author": "",
+        "version": "1.0",
+        "size": 3417,
+        "id": "ddgfjfg",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u6781\u9650\u7cbe\u7b80\u8c28\u614e\u6d4b\u8bd5.mpk"
+        ]
+    },
+    {
+        "name": "\u67e5\u627e\u4f9d\u8d56",
+        "desc": "\u67e5\u627e\u4f9d\u8d56",
+        "author": "tao1996&&MIO",
+        "version": "1.0",
+        "size": 2192620,
+        "id": "finddep",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u67e5\u627e\u4f9d\u8d56.mpk"
+        ]
+    },
+    {
+        "name": "\u7834\u89e3MIUI\u5220\u51cfapp\u5361\u7c73\u6743\u9650",
+        "desc": "\u5b89\u535310-11 \u7834\u89e3MIUI\u5220\u51cfapp\u5361\u7c73\u6743\u9650",
+        "author": "MIO-KITCHEN",
+        "version": "1.0",
+        "size": 3920,
+        "id": "miui.process.services",
+        "depend": [
+            "java",
+            "apktool"
+        ],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u7834\u89e3MIUI\u5220\u51cfapp\u5361\u7c73\u6743\u9650.mpk"
+        ]
+    },
+    {
+        "name": "\u7cbe\u7b80miui",
+        "desc": "\u7cbe\u7b80miui",
+        "author": "tao1996",
+        "version": "1.0",
+        "size": 758,
+        "id": "jjmiui",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u7cbe\u7b80miui.mpk"
+        ]
+    },
+    {
+        "name": "\u89e3\u5305ops",
+        "desc": "\u89e3\u5305ops",
+        "author": "M.K.C",
+        "version": "1.0",
+        "size": 5538557,
+        "id": "unpackops",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u89e3\u5305ops.mpk"
+        ]
+    },
+    {
+        "name": "\u955c\u50cf\u5927\u5c0f\u8c03\u6574",
+        "desc": "\u8c03\u6574\u955c\u50cf\u5927\u5c0f\uff0c\u652f\u6301EXT4\uff0cRAW",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 2073884,
+        "id": "resizeimg",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u955c\u50cf\u5927\u5c0f\u8c03\u6574.mpk"
+        ]
+    },
+    {
+        "name": "Magisk_Patch",
+        "desc": "\u4fee\u8865Boot\uff0cROOT\u8bbe\u5907",
+        "author": "\u5bd2\u98ce\u5c45\u58eb",
+        "version": "26.1",
+        "size": 8799637,
+        "id": "magisk_patch",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u9762\u5177\u4fee\u8865.mpk"
+        ]
+    },
+    {
+        "name": "\u9f0e\u5faeTS0-TS8\u6539\u5305\u5de5\u5177",
+        "desc": "\u9996\u4e2a\u5bf9\u8f66\u673a\u652f\u6301\u7684\u63d2\u4ef6",
+        "author": "\u9759\u5fc3\u542c\u96e8&\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 4315872,
+        "id": "TS0-TS8",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u9f0e\u5faeTS0-TS8\u6539\u5305\u5de5\u5177.mpk"
+        ]
+    },
+    {
+        "name": "\u9f0e\u5faeTS10\u6539\u5305\u5de5\u5177",
+        "desc": "\u9f0e\u5faeTS10\u6539\u5305\u5de5\u5177",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 4315686,
+        "id": "TS10",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u9f0e\u5faeTS10\u6539\u5305\u5de5\u5177.mpk"
+        ]
+    },
+    {
+        "name": "\u9f0e\u5fae\u7cfb\u5217\u4e07\u80fd\u6539\u5305\u5de5\u5177",
+        "desc": "\u9f0e\u5fae\u7cfb\u5217\u4e07\u80fd\u6539\u5305\u5de5\u5177",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 4315921,
+        "id": "TSwn",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u9f0e\u5fae\u7cfb\u5217\u4e07\u80fd\u6539\u5305\u5de5\u5177.mpk"
+        ]
+    },
+    {
+        "name": "\u9f0e\u5fae\u7cfb\u5217\u4e07\u80fd\u6539\u5305\u5de5\u5177_linux",
+        "desc": "\u9f0e\u5fae\u7cfb\u5217\u4e07\u80fd\u6539\u5305\u5de5\u5177_linux",
+        "author": "\u7c73\u6b27\u79d1\u6280",
+        "version": "1.0",
+        "size": 343435,
+        "id": "TSwn_ilnux",
+        "depend": [],
+        "system": "all",
+        "arch": "all",
+        "files": [
+            "\u9f0e\u5fae\u7cfb\u5217\u4e07\u80fd\u6539\u5305\u5de5\u5177_linux.mpk"
+        ]
+    }
+]

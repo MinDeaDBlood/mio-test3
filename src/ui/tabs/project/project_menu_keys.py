@@ -1,0 +1,24 @@
+from __future__ import annotations
+
+BROWSE_BUTTON = "project_project_menu_widget_browse"
+REFRESH_BUTTON = "project_project_menu_widget_refresh"
+
+OPEN_DIRECTORY_PROJECT_REQUIRED_MESSAGE = (
+    "project_menu_open_directory_project_required_message"
+)
+RENAME_PROJECT_REQUIRED_MESSAGE = "project_menu_rename_project_required_message"
+RENAME_MISSING_PROJECT_MESSAGE = "project_menu_rename_missing_project_message"
+REMOVE_PROJECT_REQUIRED_MESSAGE = "project_menu_remove_project_required_message"
+NEW_PROJECT_INVALID_NAME_MESSAGE = "project_menu_new_project_invalid_name_message"
+
+PROJECT_PROJECT_MENU_WIDGET_DELETE = 'project_project_menu_widget_delete'
+PROJECT_PROJECT_MENU_WIDGET_NAME_CONFLICT = 'project_project_menu_widget_name_conflict'
+PROJECT_PROJECT_MENU_WIDGET_NEW = 'project_project_menu_widget_new'
+PROJECT_PROJECT_MENU_WIDGET_NEW_PROJECT_FORMAT = 'project_project_menu_widget_new_project_format'
+PROJECT_PROJECT_MENU_WIDGET_PROJECT = 'project_project_menu_widget_project'
+PROJECT_PROJECT_MENU_WIDGET_RENAME = 'project_project_menu_widget_rename'
+PROJECT_PROJECT_MENU_WIDGET_RENAME_LABEL = 'project_project_menu_widget_rename_label'
+PROJECT_PROJECT_MENU_WIDGET_RENAME_UNCHANGED = 'project_project_menu_widget_rename_unchanged'
+PROJECT_PROJECT_MENU_WIDGET_SELECTED_ITEMS_LABEL = 'project_project_menu_widget_selected_items_label'
+
+__all__ = [name for name in globals() if name.isupper()]
