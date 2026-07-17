@@ -4,7 +4,7 @@ from src.app.localization_runtime import lang
 from src.app.plugins.installer_controller import PluginInstallerController
 from src.app.plugins.runtime import build_plugin_ui_runtime_context
 from src.logic.plugins.package_reader import PluginPackageReader
-from src.ui.tabs.plugins.installer.window import InstallMpk
+from src.ui.tabs.plugins.installer.window import PluginInstallerWindow
 
 
 def open_plugin_installer(path: str):
@@ -15,7 +15,7 @@ def open_plugin_installer(path: str):
         runtime=runtime,
         package_reader=PluginPackageReader(),
     )
-    return InstallMpk(
+    return PluginInstallerWindow(
         path,
         texts=lang,
         controller=controller,

@@ -34,9 +34,9 @@ class Tool(_MainWindowBase):
             self, logger=logging, do_set_window_deffont=do_set_window_deffont
         )
         self.title(self._texts.resolve_required_ui_text(keys.WINDOW_TITLE))
-        if os.name != "posix" and hasattr(images, "icon_byte"):
+        if os.name != "posix" and hasattr(images, "app_icon"):
             try:
-                self.iconphoto(True, PhotoImage(data=images.icon_byte))
+                self.iconphoto(True, PhotoImage(data=images.app_icon))
             except Exception as exc:
                 logging.error("Failed to set application icon: %s", exc)
         apply_windows_alpha_fix(self, initial_alpha=initial_alpha, logger=logging)

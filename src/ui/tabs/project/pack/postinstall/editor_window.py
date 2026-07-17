@@ -8,6 +8,7 @@ from src.ui.contracts import PostInstallConfigControllerPort
 from src.ui.localization import LocalizationCatalog
 from src.ui.common.controls import input_
 from src.ui.common.windowing import Toplevel
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.tabs.project.pack.postinstall import keys
 
 
@@ -34,8 +35,13 @@ class PostInstallConfigEditorWindow(Toplevel):
             self.destroy()
             return
 
+        self._filesystem_choices = build_choice_set(
+            self._texts, ("ext4", "erofs")
+        )
         self.post_install_path = StringVar(value="")
-        self.filesystem_type = StringVar(value="")
+        self.filesystem_type = StringVar(
+            value=self._filesystem_choices.label_for("ext4")
+        )
         self.run_postinstall = BooleanVar(value=False)
         self.postinstall_optional = BooleanVar(value=False)
         self._build_ui()
@@ -48,7 +54,12 @@ class PostInstallConfigEditorWindow(Toplevel):
             return
         self.run_postinstall.set(entry.run_postinstall)
         self.post_install_path.set(entry.postinstall_path)
-        self.filesystem_type.set(entry.filesystem_type)
+        self.filesystem_type.set(
+            self._filesystem_choices.label_for(entry.filesystem_type)
+        )
+        self.filesystem_box.current(
+            self._filesystem_choices.index_for(entry.filesystem_type)
+        )
         self.postinstall_optional.set(entry.postinstall_optional)
 
     def _store_selected_entry(self) -> None:
@@ -59,7 +70,9 @@ class PostInstallConfigEditorWindow(Toplevel):
             partition,
             run_postinstall=bool(self.run_postinstall.get()),
             postinstall_path=self.post_install_path.get(),
-            filesystem_type=self.filesystem_type.get(),
+            filesystem_type=self._filesystem_choices.value_at(
+                self.filesystem_box.current()
+            ),
             postinstall_optional=bool(self.postinstall_optional.get()),
         )
 
@@ -98,7 +111,11 @@ class PostInstallConfigEditorWindow(Toplevel):
         if self.entries:
             self.partition_box.current(0)
         self.partition_box.pack(padx=5, pady=5, side=LEFT, expand=True, fill=X)
-        ttk.Button(top, text="+", command=self._add_partition).pack(
+        ttk.Button(
+            top,
+            text=self._texts.resolve_required_ui_text(keys.ADD_PARTITION_BUTTON),
+            command=self._add_partition,
+        ).pack(
             padx=5, pady=5, side=LEFT, expand=True, fill=X
         )
         ttk.Button(
@@ -110,12 +127,28 @@ class PostInstallConfigEditorWindow(Toplevel):
         form = ttk.LabelFrame(
             self, text=self._texts.resolve_required_ui_text(keys.CONFIG)
         )
-        self._add_switch(form, "RUN_POSTINSTALL", self.run_postinstall)
-        self._add_entry(form, "POSTINSTALL_PATH", self.post_install_path)
-        self._add_combobox(
-            form, "FILESYSTEM_TYPE", self.filesystem_type, ("ext4", "erofs")
+        self._add_switch(
+            form,
+            self._texts.resolve_required_ui_text(keys.RUN_POSTINSTALL_LABEL),
+            self.run_postinstall,
         )
-        self._add_switch(form, "POSTINSTALL_OPTIONAL", self.postinstall_optional)
+        self._add_entry(
+            form,
+            self._texts.resolve_required_ui_text(keys.POSTINSTALL_PATH_LABEL),
+            self.post_install_path,
+        )
+        self.filesystem_box = self._add_combobox(
+            form,
+            self._texts.resolve_required_ui_text(keys.FILESYSTEM_TYPE_LABEL),
+            self.filesystem_type,
+            self._filesystem_choices.labels,
+        )
+        self.filesystem_box.current(self._filesystem_choices.index_for("ext4"))
+        self._add_switch(
+            form,
+            self._texts.resolve_required_ui_text(keys.POSTINSTALL_OPTIONAL_LABEL),
+            self.postinstall_optional,
+        )
         form.pack(padx=5, pady=5, expand=True, side="top", fill=X)
         top.pack(padx=5, pady=5, expand=True, side="top", fill=X)
         ttk.Button(
@@ -154,15 +187,23 @@ class PostInstallConfigEditorWindow(Toplevel):
     @staticmethod
     def _add_combobox(
         master: object, label: str, variable: StringVar, values: tuple[str, ...]
-    ) -> None:
+    ) -> ttk.Combobox:
         frame = Frame(master)
         ttk.Label(frame, text=label).pack(
             padx=5, pady=5, side=LEFT, expand=True, fill=X
         )
-        ttk.Combobox(frame, textvariable=variable, values=values, width=14).pack(
+        combobox = ttk.Combobox(
+            frame,
+            textvariable=variable,
+            values=values,
+            width=14,
+            state="readonly",
+        )
+        combobox.pack(
             padx=5, pady=5, side=LEFT, expand=True, fill=X
         )
         frame.pack(padx=5, pady=5, expand=True, side="top", fill=X)
+        return combobox
 
 
 __all__ = ["PostInstallConfigEditorWindow"]

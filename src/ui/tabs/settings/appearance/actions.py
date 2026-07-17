@@ -5,7 +5,7 @@ from io import BytesIO
 import sv_ttk
 from PIL.Image import open as open_img
 
-from src.ui.assets import images
+from src.ui.assets.loading_indicator import get_loading_indicator
 from src.ui.common.window_appearance import (
     apply_theme_to_windows,
     apply_transparency_to_windows,
@@ -18,27 +18,27 @@ def apply_initial_appearance(
     window,
     theme_var,
     language_var,
-    theme_name: str,
+    theme_id: str,
     language_name: str,
     transparent_enabled: bool,
     effect_alpha: float | str,
 ) -> None:
-    theme_var.set(theme_name)
+    theme_var.set(theme_id)
     language_var.set(language_name)
-    sv_ttk.set_theme(theme_name)
+    sv_ttk.set_theme(theme_id)
     register_window(window)
-    apply_theme_to_windows(theme_name)
+    apply_theme_to_windows(theme_id)
     apply_transparency_to_windows(
         enabled=transparent_enabled,
         effect_alpha=effect_alpha,
     )
 
 
-def apply_theme_appearance(*, window, animation, theme_name: str, loading_variant: str) -> None:
-    sv_ttk.set_theme(theme_name)
+def apply_theme_appearance(*, window, animation, theme_id: str) -> None:
+    sv_ttk.set_theme(theme_id)
     register_window(window)
-    apply_theme_to_windows(theme_name)
-    image_data = getattr(images, f'loading_{loading_variant}_byte')
+    apply_theme_to_windows(theme_id)
+    image_data = get_loading_indicator(theme_id)
     animation.load_gif(open_img(BytesIO(image_data)))
 
 

@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import threading
+import time
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,19 @@ _ROOTS: set[Path] = set()
 _EXCLUDED_ROOTS: set[Path] = set()
 _INSTALLED = False
 _GUARD = threading.local()
+_READ_DEDUP_LOCK = threading.Lock()
+_RECENT_READ_EVENTS: dict[tuple[object, ...], float] = {}
+_READ_DEDUP_SECONDS = 0.5
+_MAX_RECENT_READ_EVENTS = 512
+
+_SPECIAL_DEVICE_NAMES = {
+    "aux",
+    "con",
+    "nul",
+    "prn",
+    *(f"com{index}" for index in range(1, 10)),
+    *(f"lpt{index}" for index in range(1, 10)),
+}
 
 _READ_EVENTS = {"os.listdir", "os.scandir"}
 _MUTATION_EVENTS = {
@@ -77,6 +91,32 @@ def _is_relevant(path: Path) -> bool:
     if any(_is_inside(path, excluded) for excluded in _EXCLUDED_ROOTS):
         return False
     return any(_is_inside(path, root) for root in _ROOTS)
+
+
+def _is_special_device_path(path: Path) -> bool:
+    return path.name.casefold().split(".", 1)[0] in _SPECIAL_DEVICE_NAMES
+
+
+def _is_runtime_executable(path: Path) -> bool:
+    executable = _normalize(sys.executable)
+    return executable is not None and path == executable
+
+
+def _suppress_repeated_read(key: tuple[object, ...]) -> bool:
+    now = time.monotonic()
+    with _READ_DEDUP_LOCK:
+        previous = _RECENT_READ_EVENTS.get(key)
+        _RECENT_READ_EVENTS[key] = now
+        if len(_RECENT_READ_EVENTS) > _MAX_RECENT_READ_EVENTS:
+            cutoff = now - _READ_DEDUP_SECONDS
+            stale = [
+                stored_key
+                for stored_key, timestamp in _RECENT_READ_EVENTS.items()
+                if timestamp < cutoff
+            ]
+            for stored_key in stale:
+                _RECENT_READ_EVENTS.pop(stored_key, None)
+        return previous is not None and now - previous < _READ_DEDUP_SECONDS
 
 
 def _open_is_mutating(mode: object, flags: object) -> bool:
@@ -161,11 +201,20 @@ def _emit(event: str, args: tuple[Any, ...]) -> None:
         return
     if event == "open":
         path = _normalize(args[0]) if args else None
-        if path is None or not _is_relevant(path):
+        if (
+            path is None
+            or not _is_relevant(path)
+            or _is_special_device_path(path)
+        ):
             return
         mode = args[1] if len(args) > 1 else None
         flags = args[2] if len(args) > 2 else None
         mutating = _open_is_mutating(mode, flags)
+        if not mutating:
+            if _is_runtime_executable(path):
+                return
+            if _suppress_repeated_read(("open", path, mode, flags)):
+                return
         _GUARD.active = True
         try:
             log_method = logger.info if mutating else logger.debug
@@ -184,6 +233,10 @@ def _emit(event: str, args: tuple[Any, ...]) -> None:
         return
     paths = _path_values(event, args)
     if not paths:
+        return
+    if event == "os.mkdir" and all(path.exists() for path in paths):
+        return
+    if event in _READ_EVENTS and _suppress_repeated_read((event, *paths)):
         return
     _GUARD.active = True
     try:

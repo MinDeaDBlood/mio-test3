@@ -24,9 +24,9 @@ def _resolve_pil_image_helpers():
 
 @lru_cache(maxsize=1)
 def _load_miside_banner_bytes():
-    from src.ui.assets.miside_banner import img
+    from src.ui.assets.miside_banner import banner_image
 
-    return img
+    return banner_image
 
 
 class Debugger(Toplevel):

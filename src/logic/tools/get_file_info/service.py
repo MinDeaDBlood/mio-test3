@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import time
 from dataclasses import dataclass
 from typing import Callable
 
@@ -14,18 +13,18 @@ class FileInfo:
     path: str
     file_type: str
     size_bytes: int
-    created_time: str
+    created_timestamp: float
 
 
 def normalize_input_path(file_list: list[object]) -> str:
     if not file_list:
-        return ''
+        return ""
     value = file_list[0]
     if isinstance(value, bytes):
         try:
-            return value.decode('utf-8')
+            return value.decode("utf-8")
         except UnicodeDecodeError:
-            return value.decode('gbk')
+            return value.decode("gbk")
     return str(value)
 
 
@@ -37,7 +36,7 @@ def describe_file(
     get_size: Callable[[str], int] = os.path.getsize,
     get_ctime: Callable[[str], float] = os.path.getctime,
 ) -> FileInfo | None:
-    normalized = str(path or '').strip()
+    normalized = str(path or "").strip()
     if not normalized or not is_file(normalized):
         return None
     size = get_size(normalized)
@@ -46,8 +45,8 @@ def describe_file(
         path=normalized,
         file_type=gettype_func(normalized),
         size_bytes=size,
-        created_time=time.ctime(get_ctime(normalized)),
+        created_timestamp=get_ctime(normalized),
     )
 
 
-__all__ = ['FileInfo', 'describe_file', 'normalize_input_path']
+__all__ = ["FileInfo", "describe_file", "normalize_input_path"]

@@ -55,10 +55,15 @@ class PartitionPackController:
         self.runtime = runtime
         self.animation = animation
         self.dependencies = build_default_pack_partition_dependencies()
+        self._before_pack_hook_sent = False
         self._packing_hook_sent = False
 
     def notify_before_pack(self) -> None:
+        if self._before_pack_hook_sent:
+            logger.debug("partition_pack.plugin_hook: entry=before_pack state=already_sent")
+            return
         self.runtime.plugin_lifecycle.before_pack()
+        self._before_pack_hook_sent = True
 
     def notify_packing_start(self) -> None:
         if self._packing_hook_sent:
@@ -188,6 +193,7 @@ class PartitionPackController:
                 self.runtime.workflow.work_path,
                 self.runtime.workflow.output_path,
             )
+            self.notify_before_pack()
             self.notify_packing_start()
             prepared_request = self.prepare_request(request)
             result = pack_selected_partitions(

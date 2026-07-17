@@ -3,6 +3,7 @@ from __future__ import annotations
 from tkinter import BOTTOM, HORIZONTAL, LEFT, X, Y, Canvas, Menu, ttk
 
 from src.ui.common.controls import ListBox
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.tabs.project.unpack.registry import get_option_values
 from src.ui.tabs.project.unpack import layout_keys as keys
 
@@ -13,8 +14,11 @@ def build_unpack_view_layout(view) -> None:
     run_select_canvas = Canvas(view)
     run_select_canvas.config(highlightthickness=0)
 
+    view.format_choices = build_choice_set(view.texts, get_option_values())
     view.fm = ttk.Combobox(
-        run_select_canvas, state="readonly", values=get_option_values()
+        run_select_canvas,
+        state="readonly",
+        values=view.format_choices.labels,
     )
     view.lsg = ListBox(
         view,

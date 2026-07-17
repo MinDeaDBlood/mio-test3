@@ -30,9 +30,9 @@ class CrashWindowActions:
 def _resolve_error_logo_helpers():
     from PIL.Image import open as open_img
     from PIL.ImageTk import PhotoImage
-    from src.ui.assets.images import error_logo_byte
+    from src.ui.assets.images import error_logo
 
-    return open_img, PhotoImage, error_logo_byte
+    return open_img, PhotoImage, error_logo
 
 
 def build_crash_window(
@@ -47,8 +47,8 @@ def build_crash_window(
     """Build and display the crash view from explicit application inputs."""
     sv_ttk.use_dark_theme()
     window = themed_toplevel(parent=root_window)
-    open_img, PhotoImage, error_logo_byte = _resolve_error_logo_helpers()
-    image = open_img(BytesIO(error_logo_byte)).resize((100, 100))
+    open_img, PhotoImage, error_logo = _resolve_error_logo_helpers()
+    image = open_img(BytesIO(error_logo)).resize((100, 100))
     photo = PhotoImage(image)
     label = Label(window, image=photo)
     label.image = photo

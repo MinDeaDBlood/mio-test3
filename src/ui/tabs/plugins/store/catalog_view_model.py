@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.ui.common.formatting import format_bytes
+from src.ui.common.byte_size import format_localized_byte_size
 from src.ui.tabs.plugins.store.contracts import PluginCatalogItemProtocol
 from src.ui.localization import LocalizationCatalog
 from src.ui.tabs.plugins.store import keys
@@ -62,7 +62,10 @@ def build_metadata_view_model(
     return PluginStoreMetadataViewModel(
         author_label=f"{texts.resolve_required_ui_text(keys.CATALOG_AUTHOR_LABEL)} {item.author}".strip(),
         version_label=f"{texts.resolve_required_ui_text(keys.CATALOG_VERSION_LABEL)} {item.version}".strip(),
-        size_label=f"{texts.resolve_required_ui_text(keys.CATALOG_SIZE_LABEL)} {format_bytes(item.size_bytes)}".strip(),
+        size_label=(
+            f"{texts.resolve_required_ui_text(keys.CATALOG_SIZE_LABEL)} "
+            f"{format_localized_byte_size(item.size_bytes, texts=texts)}"
+        ).strip(),
         description=item.description,
     )
 
@@ -81,8 +84,12 @@ def build_action_view_model(
         dependencies=item.dependencies,
         download_args=(item.files, item.size_bytes, item.plugin_id, item.dependencies),
         button_width=resolve_store_button_width(button_width),
-        install_text=texts.resolve_required_ui_text(keys.PLUGINS_STORE_CATALOG_VIEW_MODEL_INSTALL),
-        uninstall_text=texts.resolve_required_ui_text(keys.PLUGINS_STORE_CATALOG_VIEW_MODEL_UNINSTALL),
+        install_text=texts.resolve_required_ui_text(
+            keys.PLUGINS_STORE_CATALOG_VIEW_MODEL_INSTALL
+        ),
+        uninstall_text=texts.resolve_required_ui_text(
+            keys.PLUGINS_STORE_CATALOG_VIEW_MODEL_UNINSTALL
+        ),
     )
 
 

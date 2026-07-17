@@ -37,7 +37,6 @@ def open_partition_pack(parts: list[str]):
         controller=controller,
         host_window=host_window,
     )
-    controller.notify_before_pack()
     return window
 
 

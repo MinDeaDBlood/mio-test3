@@ -7,6 +7,7 @@ from tkinter import ttk
 from src.ui.warn.dialogs import ask_win, warn_win
 from src.ui.localization import LocalizationCatalog
 from src.ui.common.controls import ListBox
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.common.windowing import Toplevel
 from src.ui.tabs.project.pack.super.presenter import (
     describe_pack_super_result,
@@ -42,7 +43,12 @@ class PackSuper(Toplevel):
         self.is_sparse = BooleanVar()
         self.super_type = IntVar(value=1)
         self.attrib = StringVar(value="readonly")
-        self.group_name = StringVar(value=default_group_name)
+        self._group_choices = build_choice_set(
+            self._texts,
+            ("qti_dynamic_partitions", "main", "mot_dp_group"),
+        )
+        self._default_group_name = default_group_name
+        self.group_name = StringVar(value=self._display_group_name(default_group_name))
         self.delete_source_file = BooleanVar(value=False)
         self.block_device_name = StringVar(value="super")
         self.selected: list[str] = []
@@ -121,12 +127,18 @@ class PackSuper(Toplevel):
                 keys.PROJECT_PACK_SUPER_WINDOW_GROUP_NAME
             ),
         ).pack(side=LEFT, padx=10, pady=10)
-        group_combo = ttk.Combobox(
+        self.group_combo = ttk.Combobox(
             group_frame,
             textvariable=self.group_name,
-            values=("qti_dynamic_partitions", "main", "mot_dp_group"),
+            values=self._group_choices.labels,
         )
-        group_combo.pack(side=LEFT, padx=10, pady=10, fill=BOTH)
+        try:
+            self.group_combo.current(
+                self._group_choices.index_for(self._default_group_name)
+            )
+        except KeyError:
+            self.group_combo.set(self._default_group_name)
+        self.group_combo.pack(side=LEFT, padx=10, pady=10, fill=BOTH)
         Label(
             group_frame,
             text=self._texts.resolve_required_ui_text(
@@ -195,6 +207,18 @@ class PackSuper(Toplevel):
             style="Accent.TButton",
         ).pack(side=LEFT, padx=5, pady=5, fill=X, expand=True)
 
+    def _display_group_name(self, value: str) -> str:
+        try:
+            return self._group_choices.label_for(value)
+        except KeyError:
+            return value
+
+    def _internal_group_name(self) -> str:
+        selected_index = self.group_combo.current()
+        if selected_index >= 0:
+            return self._group_choices.value_at(selected_index)
+        return self.group_name.get().strip()
+
     def _update_size_entry_state(self, entry):
         entry.state(["!invalid" if entry.get().isdigit() else "invalid"])
 
@@ -222,17 +246,24 @@ class PackSuper(Toplevel):
             return False
         if not self.verify_size():
             return False
+        sparse = self.is_sparse.get()
+        group_name = self._internal_group_name()
+        super_type = self.super_type.get()
+        part_list = self.tl.selected.copy()
+        delete_source_file = self.delete_source_file.get()
+        attribute = self.attrib.get()
+        block_device_name = self.block_device_name.get()
         self.destroy()
         self._start_animation()
         controller.start_pack(
-            sparse=self.is_sparse.get(),
-            group_name=self.group_name.get(),
+            sparse=sparse,
+            group_name=group_name,
             size=size,
-            super_type=self.super_type.get(),
-            part_list=self.tl.selected.copy(),
-            del_=self.delete_source_file.get(),
-            attrib=self.attrib.get(),
-            block_device_name=self.block_device_name.get(),
+            super_type=super_type,
+            part_list=part_list,
+            del_=delete_source_file,
+            attrib=attribute,
+            block_device_name=block_device_name,
             on_success=self._apply_pack_result,
             on_error=self._handle_pack_error,
             on_finally=self._stop_animation,
@@ -310,7 +341,7 @@ class PackSuper(Toplevel):
             state="disabled",
         )
         self._require_controller().generate_dynamic_list(
-            group_name=self.group_name.get(),
+            group_name=self._internal_group_name(),
             size=self.super_size.get(),
             super_type=self.super_type.get(),
             part_list=self.tl.selected.copy(),
@@ -345,7 +376,9 @@ class PackSuper(Toplevel):
         self.tl.clear()
         for entry in self._require_controller().scan_images(self.selected):
             self.tl.insert(
-                format_packable_super_image(entry), entry.name, entry.selected
+                format_packable_super_image(entry, texts=self._texts),
+                entry.name,
+                entry.selected,
             )
 
     def read_list(self):
@@ -355,7 +388,7 @@ class PackSuper(Toplevel):
         if isinstance(state.super_size, int):
             self.super_size.set(state.super_size)
         if state.group_name:
-            self.group_name.set(state.group_name)
+            self.group_name.set(self._display_group_name(state.group_name))
         if isinstance(state.super_type, int):
             self.super_type.set(state.super_type)
         self.selected = list(state.selected)

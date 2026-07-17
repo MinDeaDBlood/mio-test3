@@ -78,7 +78,7 @@ class PluginManagerCatalogPresenter:
     def _resolve_icon(self, item: PluginCatalogItemProtocol):
         window = self.window
         if item.icon_path is None:
-            photo = self._photo_image(data=images.none_byte)
+            photo = self._photo_image(data=images.placeholder_image)
         else:
             try:
                 from PIL.Image import open as open_img
@@ -89,7 +89,7 @@ class PluginManagerCatalogPresenter:
                 self.logger.error(
                     "Invalid icon for plugin '%s': %s", item.plugin_id, exc
                 )
-                photo = self._photo_image(data=images.error_logo_byte)
+                photo = self._photo_image(data=images.error_logo)
         window.images_[item.plugin_id] = photo
         return photo
 

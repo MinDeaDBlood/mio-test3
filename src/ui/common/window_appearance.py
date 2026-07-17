@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Protocol, cast
 from weakref import WeakSet
 
+from src.ui.common.themes.identifiers import DARK_THEME, require_theme_id
 from src.ui.common.titlebar import TitlebarWindowProtocol, set_title_bar_color
 
 
@@ -20,7 +21,7 @@ class AppearanceWindowProtocol(TitlebarWindowProtocol, Protocol):
 
 _WINDOWS: WeakSet[AppearanceWindowProtocol] = WeakSet()
 _BOUND_WINDOWS: WeakSet[AppearanceWindowProtocol] = WeakSet()
-_THEME_NAME = 'dark'
+_THEME_ID = DARK_THEME
 _WINDOW_ALPHA = 1.0
 _MIN_ALPHA = 0.55
 _MAX_ALPHA = 1.0
@@ -51,13 +52,13 @@ def _window_exists(window: AppearanceWindowProtocol) -> bool:
 def _apply_to_window(window: AppearanceWindowProtocol) -> None:
     if not _window_exists(window):
         return
-    dark_theme = _THEME_NAME == 'dark'
+    is_dark_theme = _THEME_ID == DARK_THEME
     try:
         set_title_bar_color(window, True)
     except (AttributeError, OSError, TclError, TypeError, ValueError):
         return
     try:
-        window.configure(background=_DARK_BACKGROUND if dark_theme else _LIGHT_BACKGROUND)
+        window.configure(background=_DARK_BACKGROUND if is_dark_theme else _LIGHT_BACKGROUND)
     except (AttributeError, TclError):
         pass
     try:
@@ -86,10 +87,9 @@ def register_window(window: object) -> None:
         return
 
 
-def apply_theme_to_windows(theme_name: str) -> None:
-    global _THEME_NAME
-    normalized = str(theme_name or '').strip().lower()
-    _THEME_NAME = 'dark' if normalized == 'dark' else 'light'
+def apply_theme_to_windows(theme_id: str) -> None:
+    global _THEME_ID
+    _THEME_ID = require_theme_id(theme_id)
     for window in tuple(_WINDOWS):
         _apply_to_window(window)
 
@@ -106,15 +106,15 @@ def current_window_alpha() -> float:
     return _WINDOW_ALPHA
 
 
-def current_theme_name() -> str:
-    return _THEME_NAME
+def current_theme_id() -> str:
+    return _THEME_ID
 
 
 __all__ = [
     'AppearanceWindowProtocol',
     'apply_theme_to_windows',
     'apply_transparency_to_windows',
-    'current_theme_name',
+    'current_theme_id',
     'current_window_alpha',
     'normalize_window_alpha',
     'register_window',

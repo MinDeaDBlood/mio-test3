@@ -17,6 +17,7 @@ from tkinter import ttk
 
 from src.ui.localization import LocalizationCatalog
 from src.ui.common.windowing import Toplevel, present_window
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.tabs.project.pack.registry import get_output_values
 from src.ui.tabs.project.pack.partition.custom_size_dialog import edit_custom_ext4_sizes
 from src.ui.tabs.project.pack.partition import keys
@@ -38,9 +39,27 @@ class PackPartition(Toplevel):
         self.host_window = host_window
         super().__init__(master=host_window)
         self.spatchvb = IntVar(master=self)
-        self.ext4_packer = StringVar(master=self, value="make_ext4fs")
-        self.format = StringVar(master=self, value="raw")
-        self.erofs_compress_format = StringVar(master=self, value="lz4hc")
+        self._ext4_packer_choices = build_choice_set(
+            self._texts, ("make_ext4fs", "mke2fs+e2fsdroid")
+        )
+        self._output_format_choices = build_choice_set(
+            self._texts, get_output_values()
+        )
+        self._erofs_compression_choices = build_choice_set(
+            self._texts, ("lz4", "lz4hc", "lzma", "deflate", "zstd")
+        )
+        self._filesystem_choices = build_choice_set(
+            self._texts, ("ext", "f2fs", "erofs")
+        )
+        self.ext4_packer = StringVar(
+            master=self, value=self._ext4_packer_choices.label_for("make_ext4fs")
+        )
+        self.format = StringVar(
+            master=self, value=self._output_format_choices.label_for("raw")
+        )
+        self.erofs_compress_format = StringVar(
+            master=self, value=self._erofs_compression_choices.label_for("lz4hc")
+        )
         self.scale = IntVar(master=self, value=0)
         self.UTC = StringVar(master=self, value=str(int(time.time())))
         self.scale_erofs = IntVar(master=self)
@@ -48,8 +67,12 @@ class PackPartition(Toplevel):
         self.ext4_method = StringVar(
             master=self, value=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_AUTOMATIC)
         )
-        self.origin_fs = StringVar(master=self, value="ext")
-        self.modify_fs = StringVar(master=self, value="ext")
+        self.origin_fs = StringVar(
+            master=self, value=self._filesystem_choices.label_for("ext")
+        )
+        self.modify_fs = StringVar(
+            master=self, value=self._filesystem_choices.label_for("ext")
+        )
         self.fs_conver = BooleanVar(master=self, value=False)
         self.erofs_old_kernel = BooleanVar(master=self, value=False)
 
@@ -76,16 +99,20 @@ class PackPartition(Toplevel):
         Label(lf1, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_PACKER_LABEL)).pack(
             side="left", padx=5, pady=5
         )
-        ttk.Combobox(
+        self.ext4_packer_box = ttk.Combobox(
             lf1,
             state="readonly",
-            values=("make_ext4fs", "mke2fs+e2fsdroid"),
+            values=self._ext4_packer_choices.labels,
             textvariable=self.ext4_packer,
-        ).pack(side="left", padx=5, pady=5)
+        )
+        self.ext4_packer_box.current(
+            self._ext4_packer_choices.index_for("make_ext4fs")
+        )
+        self.ext4_packer_box.pack(side="left", padx=5, pady=5)
         Label(
             lf1, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_IMAGE_SIZE_LABEL)
         ).pack(side="left", padx=5, pady=5)
-        ttk.Combobox(
+        self.ext4_size_mode_box = ttk.Combobox(
             lf1,
             state="readonly",
             values=(
@@ -93,7 +120,9 @@ class PackPartition(Toplevel):
                 self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_SAME_AS_ORIGINAL),
             ),
             textvariable=self.ext4_method,
-        ).pack(side="left", padx=5, pady=5)
+        )
+        self.ext4_size_mode_box.current(0)
+        self.ext4_size_mode_box.pack(side="left", padx=5, pady=5)
         self.modify_size_button = ttk.Button(
             lf1,
             text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_MODIFY_SIZE),
@@ -102,8 +131,7 @@ class PackPartition(Toplevel):
         self.modify_size_button.pack(side="left", padx=5, pady=5)
         self.show_modify_size = (
             lambda: self.modify_size_button.pack_forget()
-            if self.ext4_method.get()
-            == self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_AUTOMATIC)
+            if self.ext4_size_mode_box.current() == 0
             else self.modify_size_button.pack(side="left", padx=5, pady=5)
         )
         self.ext4_method.trace("w", lambda *x: self.show_modify_size())
@@ -112,18 +140,27 @@ class PackPartition(Toplevel):
         Label(
             lf3, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_OUTPUT_FORMAT_LABEL)
         ).pack(side="left", padx=5, pady=5)
-        ttk.Combobox(
-            lf3, state="readonly", textvariable=self.format, values=get_output_values()
-        ).pack(padx=5, pady=5, side="left")
+        self.output_format_box = ttk.Combobox(
+            lf3,
+            state="readonly",
+            textvariable=self.format,
+            values=self._output_format_choices.labels,
+        )
+        self.output_format_box.current(self._output_format_choices.index_for("raw"))
+        self.output_format_box.pack(padx=5, pady=5, side="left")
         Label(
             lf2, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_COMPRESSION_METHOD)
         ).pack(side="left", padx=5, pady=5)
-        ttk.Combobox(
+        self.erofs_compression_box = ttk.Combobox(
             lf2,
             state="readonly",
             textvariable=self.erofs_compress_format,
-            values=("lz4", "lz4hc", "lzma", "deflate", "zstd"),
-        ).pack(side="left", padx=5, pady=5)
+            values=self._erofs_compression_choices.labels,
+        )
+        self.erofs_compression_box.current(
+            self._erofs_compression_choices.index_for("lz4hc")
+        )
+        self.erofs_compression_box.pack(side="left", padx=5, pady=5)
         ttk.Checkbutton(
             lf2,
             text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_OLD_KERNEL_SUPPORT),
@@ -210,23 +247,27 @@ class PackPartition(Toplevel):
             style="Switch.TCheckbutton",
         ).pack(padx=5, pady=5, fill=BOTH)
         fs_conver = ttk.Frame(lf3, width=20)
-        ttk.Combobox(
+        self.origin_fs_box = ttk.Combobox(
             fs_conver,
             textvariable=self.origin_fs,
-            values=("ext", "f2fs", "erofs"),
+            values=self._filesystem_choices.labels,
             width=6,
             state="readonly",
-        ).pack(padx=2, pady=2, fill=X, side=LEFT)
+        )
+        self.origin_fs_box.current(self._filesystem_choices.index_for("ext"))
+        self.origin_fs_box.pack(padx=2, pady=2, fill=X, side=LEFT)
         ttk.Label(
             fs_conver, text=self._texts.resolve_required_ui_text(keys.FS_CONVERT_ARROW)
         ).pack(side=LEFT, fill=X, padx=1, pady=1)
-        ttk.Combobox(
+        self.modify_fs_box = ttk.Combobox(
             fs_conver,
             textvariable=self.modify_fs,
-            values=("ext", "f2fs", "erofs"),
+            values=self._filesystem_choices.labels,
             width=6,
             state="readonly",
-        ).pack(padx=2, pady=2, fill=X, side=LEFT)
+        )
+        self.modify_fs_box.current(self._filesystem_choices.index_for("ext"))
+        self.modify_fs_box.pack(padx=2, pady=2, fill=X, side=LEFT)
         self.fs_conver.trace(
             "w",
             lambda *z: fs_conver.pack_forget()
@@ -314,18 +355,27 @@ class PackPartition(Toplevel):
             "chosen_parts": list(self.chosen_parts),
             "patch_vbmeta": self.spatchvb.get() == 1,
             "remove_source_files": self.remove_source_files.get() == 1,
-            "ext4_packer": self.ext4_packer.get(),
+            "ext4_packer": self._ext4_packer_choices.value_at(
+                self.ext4_packer_box.current()
+            ),
             "ext4_size_mode": "fixed"
-            if self.ext4_method.get()
-            == self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_SAME_AS_ORIGINAL)
+            if self.ext4_size_mode_box.current() == 1
             else "auto",
-            "output_format": self.format.get(),
-            "erofs_compress_format": self.erofs_compress_format.get(),
+            "output_format": self._output_format_choices.value_at(
+                self.output_format_box.current()
+            ),
+            "erofs_compress_format": self._erofs_compression_choices.value_at(
+                self.erofs_compression_box.current()
+            ),
             "erofs_level": int(self.scale_erofs.get()),
             "brotli_level": int(self.scale.get()),
             "utc": str(self.UTC.get()).strip(),
-            "origin_fs": self.origin_fs.get(),
-            "modify_fs": self.modify_fs.get(),
+            "origin_fs": self._filesystem_choices.value_at(
+                self.origin_fs_box.current()
+            ),
+            "modify_fs": self._filesystem_choices.value_at(
+                self.modify_fs_box.current()
+            ),
             "fs_convert": self.fs_conver.get(),
             "erofs_old_kernel": self.erofs_old_kernel.get(),
             "custom_size": dict(self.custom_size),

@@ -22,7 +22,10 @@ class RightPanelController:
         return RightPanelSpec(
             title_text=self.lang.resolve_required_ui_text(keys.BRAND_TITLE),
             drop_title=self.lang.resolve_required_ui_text(keys.DROP_ROM_TITLE),
-            drop_hint=self.lang.resolve_required_ui_text(keys.DROP_FILES_HINT)
-            + "\n(pac ozip zip tar.md5 tar tar.gz kdz dz ops ofp ext4 erofs boot img)",
+            drop_hint=(
+                self.lang.resolve_required_ui_text(keys.DROP_FILES_HINT)
+                + "\n"
+                + self.lang.resolve_required_ui_text(keys.DROP_SUPPORTED_FORMATS)
+            ),
             stdout_buffer=str(self.stdout_obj.data),
         )

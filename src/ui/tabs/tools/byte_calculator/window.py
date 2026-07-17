@@ -5,6 +5,7 @@ from tkinter import X, Frame, Label, ttk
 
 from src.ui.contracts import ByteCalculatorControllerPort
 from src.ui.common.windowing import Toplevel
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.tabs.tools.byte_calculator import keys
 
 
@@ -14,7 +15,8 @@ class FileBytes(Toplevel):
     ) -> None:
         super().__init__()
         self._language = language
-        self.units = units
+        self.units = tuple(units)
+        self._unit_choices = build_choice_set(self._language, self.units)
         self.controller = controller
         self.title(language.resolve_required_ui_text(keys.TITLE))
         self._is_calculating = False
@@ -30,7 +32,7 @@ class FileBytes(Toplevel):
         self.origin_entry.bind("<KeyRelease>", self.calc_forward)
         self.origin_entry.pack(side="left", padx=5, expand=True, fill=X)
         self.origin_unit = ttk.Combobox(
-            frame, values=list(self.units), state="readonly", width=4
+            frame, values=self._unit_choices.labels, state="readonly", width=4
         )
         self.origin_unit.current(0)
         self.origin_unit.bind("<<ComboboxSelected>>", self._on_origin_unit_changed)
@@ -40,7 +42,7 @@ class FileBytes(Toplevel):
         self.result_entry.bind("<KeyRelease>", self.calc_reverse)
         self.result_entry.pack(side="left", padx=5, expand=True, fill=X)
         self.target_unit = ttk.Combobox(
-            frame, values=list(self.units), state="readonly", width=4
+            frame, values=self._unit_choices.labels, state="readonly", width=4
         )
         self.target_unit.current(0)
         self.target_unit.bind("<<ComboboxSelected>>", self._on_target_unit_changed)
@@ -78,8 +80,8 @@ class FileBytes(Toplevel):
             self._apply_conversion(
                 self.origin_size_var,
                 self.result_size_var,
-                self.origin_unit.get(),
-                self.target_unit.get(),
+                self._unit_choices.value_at(self.origin_unit.current()),
+                self._unit_choices.value_at(self.target_unit.current()),
             )
         finally:
             self._is_calculating = False
@@ -92,8 +94,8 @@ class FileBytes(Toplevel):
             self._apply_conversion(
                 self.result_size_var,
                 self.origin_size_var,
-                self.target_unit.get(),
-                self.origin_unit.get(),
+                self._unit_choices.value_at(self.target_unit.current()),
+                self._unit_choices.value_at(self.origin_unit.current()),
             )
         finally:
             self._is_calculating = False

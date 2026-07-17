@@ -3,7 +3,8 @@ from __future__ import annotations
 from tkinter import StringVar
 
 from src.ui.localization import LocalizationCatalog
-from src.ui.common.formatting import format_bytes
+from src.ui.common.byte_size import format_localized_byte_size
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.tabs.settings.models import build_toggle_bindings
 from src.ui.tabs.settings.builders import (
     build_cache_section,
@@ -38,7 +39,9 @@ def build_settings_tab(
     def clear_cache_async():
         task_runner.run(
             controller.clear_cache,
-            on_success=lambda size: cache_label.configure(text=format_bytes(size)),
+            on_success=lambda size: cache_label.configure(
+                text=format_localized_byte_size(size, texts=texts)
+            ),
             on_error=lambda exc: actions.report_error(
                 "settings.cache.clear_failed", exc
             ),
@@ -56,12 +59,21 @@ def build_settings_tab(
     window.show_local = StringVar(value=controller.get_work_path())
     sections = build_settings_sections(window, texts=texts)
 
+    theme_choices = build_choice_set(texts, controller.get_theme_choices())
+    window.theme_display_var = StringVar(
+        value=theme_choices.label_for(runtime.theme_var.get())
+    )
+
+    def apply_selected_theme() -> None:
+        runtime.theme_var.set(theme_choices.value_at(window.list2.current()))
+        actions.apply_theme()
+
     window.list2 = build_theme_section(
         sections.theme_frame,
         texts=texts,
-        theme_var=runtime.theme_var,
-        theme_choices=controller.get_theme_choices(),
-        on_selected=actions.apply_theme,
+        theme_var=window.theme_display_var,
+        theme_choices=theme_choices.labels,
+        on_selected=apply_selected_theme,
     )
 
     build_path_section(
@@ -83,7 +95,7 @@ def build_settings_tab(
     cache_label = build_cache_section(
         sections.cache_frame,
         texts=texts,
-        cache_text=format_bytes(controller.get_cache_size()),
+        cache_text=format_localized_byte_size(controller.get_cache_size(), texts=texts),
         open_cache_path=open_cache_path,
         clear_cache_async=clear_cache_async,
     )

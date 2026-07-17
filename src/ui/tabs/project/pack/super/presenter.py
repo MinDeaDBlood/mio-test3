@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from src.ui.common.byte_size import format_localized_binary_byte_size
+from src.ui.common.technical_choices import technical_label
 from src.ui.localization import LocalizationCatalog
 from src.ui.tabs.project.pack.super import keys
 
@@ -20,21 +22,12 @@ class PackSuperResultProtocol(Protocol):
     report_path: object
 
 
-def format_packable_super_image(entry: PackableSuperImageProtocol) -> str:
-    return f"{entry.name} [{entry.image_type}]"
-
-
-def _format_size(size: int) -> str:
-    units = ("B", "KiB", "MiB", "GiB", "TiB")
-    value = float(size)
-    unit = units[0]
-    for unit in units:
-        if abs(value) < 1024 or unit == units[-1]:
-            break
-        value /= 1024
-    if unit == "B":
-        return f"{size} B"
-    return f"{value:.2f} {unit}"
+def format_packable_super_image(
+    entry: PackableSuperImageProtocol,
+    *,
+    texts: LocalizationCatalog,
+) -> str:
+    return f"{entry.name} [{technical_label(texts, entry.image_type)}]"
 
 
 def describe_pack_super_result(
@@ -56,17 +49,23 @@ def describe_pack_super_result(
                 format=output_format
             ),
             texts.resolve_required_ui_text(keys.RESULT_LOGICAL_SIZE_FORMAT).format(
-                human_size=_format_size(result.output_logical_size),
+                human_size=format_localized_binary_byte_size(
+                    result.output_logical_size, texts=texts
+                ),
                 byte_size=result.output_logical_size,
             ),
             texts.resolve_required_ui_text(keys.RESULT_PHYSICAL_SIZE_FORMAT).format(
-                human_size=_format_size(result.output_physical_size),
+                human_size=format_localized_binary_byte_size(
+                    result.output_physical_size, texts=texts
+                ),
                 byte_size=result.output_physical_size,
             ),
             texts.resolve_required_ui_text(
                 keys.RESULT_REQUESTED_DEVICE_SIZE_FORMAT
             ).format(
-                human_size=_format_size(result.requested_device_size),
+                human_size=format_localized_binary_byte_size(
+                    result.requested_device_size, texts=texts
+                ),
                 byte_size=result.requested_device_size,
             ),
             texts.resolve_required_ui_text(keys.RESULT_REPORT_FORMAT).format(

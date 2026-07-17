@@ -30,16 +30,19 @@ class UnpackViewController:
         self.texts = texts
         self.logger = logger or logging
 
+    def _selected_format(self) -> str:
+        return self.view.format_choices.value_at(self.view.fm.current())
+
     def show_menu(self, event):
         selected = self.view.lsg.selected.copy()
-        current_format = self.view.fm.get()
+        current_format = self._selected_format()
         if self.presenter.can_show_image_context_menu(selected, current_format):
             self.view.menu.post(event.x_root, event.y_root)
 
     def show_image_info(self):
         selected = self.view.lsg.selected.copy()
         image_path = self.controller.resolve_selected_image_path(
-            selected, self.view.fm.get()
+            selected, self._selected_format()
         )
         if image_path is None:
             return None
@@ -79,7 +82,7 @@ class UnpackViewController:
             if not self.controller.project_exists():
                 return False
             current = self.view.fm.current()
-            for index, format_name in enumerate(self.view.fm.cget("values")):
+            for index, format_name in enumerate(self.view.format_choices.values):
                 candidates = self.controller.list_unpack_items(format_name)
                 if candidates:
                     self.view.fm.current(index)
@@ -87,9 +90,9 @@ class UnpackViewController:
                     return True
             if current >= 0:
                 self.view.fm.current(current)
-            self.apply_candidates(self.view.fm.get(), [])
+            self.apply_candidates(self._selected_format(), [])
             return True
-        format_name = self.view.fm.get()
+        format_name = self._selected_format()
         return self.task_runner.run(
             self.controller.list_unpack_items,
             format_name,
@@ -99,7 +102,7 @@ class UnpackViewController:
         )
 
     def apply_candidates(self, format_name: str, candidates):
-        if not self.view.winfo_exists() or format_name != self.view.fm.get():
+        if not self.view.winfo_exists() or format_name != self._selected_format():
             return
         self.view.lsg.clear()
         for label, value in self.presenter.format_unpack_candidates(
@@ -134,7 +137,7 @@ class UnpackViewController:
         if self.view.winfo_exists():
             self.view.update_idletasks()
         self.runtime.animation.run()
-        current_format = self.view.fm.get()
+        current_format = self._selected_format()
         return self.task_runner.run(
             self.controller.execute_unpack_selection,
             selected.copy(),

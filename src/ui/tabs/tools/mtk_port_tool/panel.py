@@ -4,6 +4,7 @@ from tkinter import BooleanVar, Canvas, StringVar, ttk
 from tkinter.filedialog import askopenfilename
 
 from src.ui.common.windowing import Toplevel
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.contracts import (
     MtkPortControllerPort,
     MtkPortProfileProtocol,
@@ -11,6 +12,7 @@ from src.ui.contracts import (
 )
 from src.ui.localization import LocalizationCatalog
 from src.ui.tabs.tools.mtk_port_tool import keys
+from src.ui.tabs.tools.mtk_port_tool.labels import FLAG_LABEL_KEYS, PROFILE_LABEL_KEYS
 from src.ui.warn.dialogs import info_win, warn_win
 
 
@@ -91,10 +93,11 @@ class FileChooser(Toplevel):
             ttk.Button(
                 frame,
                 text=browse_text,
-                command=lambda current=value,
-                current_title=select_title: self._choose_file(
-                    current,
-                    title=current_title,
+                command=lambda current=value, current_title=select_title: (
+                    self._choose_file(
+                        current,
+                        title=current_title,
+                    )
                 ),
             ).pack(side="left", padx=5, pady=5)
         bottom_frame = ttk.Frame(self)
@@ -133,11 +136,17 @@ class MtkPortPanel(ttk.Labelframe):
         if not self._profiles:
             raise RuntimeError(self._text(keys.PROFILES_MISSING_ERROR))
 
-        first_profile = next(iter(self._profiles))
-        self.chipset_select = StringVar(value=first_profile)
+        self._profile_names = tuple(self._profiles)
+        self._profile_labels = tuple(
+            self._profile_label(profile_name) for profile_name in self._profile_names
+        )
+        self.chipset_select = StringVar(value=self._profile_labels[0])
         self.pack_type = StringVar(value="zip")
         self.patch_magisk = BooleanVar(value=False)
-        self.target_arch = StringVar(value="arm64-v8a")
+        self._arch_choices = build_choice_set(
+            self._texts, ("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+        )
+        self.target_arch = StringVar(value=self._arch_choices.label_for("arm64-v8a"))
         self.magisk_apk = StringVar(value="magisk.apk")
         self._flag_vars: dict[str, BooleanVar] = {}
         self._flag_widgets: list[ttk.Checkbutton] = []
@@ -145,6 +154,27 @@ class MtkPortPanel(ttk.Labelframe):
 
     def _text(self, key: str) -> str:
         return self._texts.resolve_required_ui_text(key)
+
+    def _profile_label(self, profile_name: str) -> str:
+        key = PROFILE_LABEL_KEYS.get(profile_name)
+        if key is not None:
+            return self._text(key)
+        return self._text(keys.PROFILE_CUSTOM).format(name=profile_name)
+
+    def _flag_label(self, flag_name: str) -> str:
+        key = FLAG_LABEL_KEYS.get(flag_name)
+        if key is not None:
+            return self._text(key)
+        return self._text(keys.FLAG_CUSTOM).format(name=flag_name)
+
+    def _selected_profile_name(self) -> str:
+        index = self._profile_combo.current()
+        if index < 0:
+            raise RuntimeError(self._text(keys.PROFILES_MISSING_ERROR))
+        return self._profile_names[index]
+
+    def _on_profile_selected(self, _event=None) -> None:
+        self._load_profile_flags(self._selected_profile_name())
 
     def _warn(self, message: str) -> None:
         warn_win(
@@ -176,7 +206,7 @@ class MtkPortPanel(ttk.Labelframe):
         magisk_path = self.magisk_apk.get() if self.patch_magisk.get() else None
         self._set_running(True)
         self._controller.start(
-            profile_name=self.chipset_select.get(),
+            profile_name=self._selected_profile_name(),
             boot_image=boot,
             system_image=system,
             port_rom=port_rom,
@@ -186,7 +216,7 @@ class MtkPortPanel(ttk.Labelframe):
             output_as_image=self.pack_type.get() == "img",
             patch_magisk=self.patch_magisk.get(),
             magisk_apk=magisk_path,
-            target_arch=self.target_arch.get(),
+            target_arch=self._arch_choices.value_at(self._magisk_arch.current()),
             on_success=self._show_success,
             on_error=self._show_error,
             on_finally=lambda: self._set_running(False),
@@ -212,7 +242,11 @@ class MtkPortPanel(ttk.Labelframe):
         for name, enabled in profile.flags.items():
             variable = BooleanVar(value=enabled)
             self._flag_vars[name] = variable
-            widget = ttk.Checkbutton(self._flags_frame, text=name, variable=variable)
+            widget = ttk.Checkbutton(
+                self._flags_frame,
+                text=self._flag_label(name),
+                variable=variable,
+            )
             widget.pack(side="top", fill="x", padx=5)
             self._flag_widgets.append(widget)
         self._flags_canvas.configure(scrollregion=self._flags_canvas.bbox("all"))
@@ -256,13 +290,15 @@ class MtkPortPanel(ttk.Labelframe):
             text=self._text(keys.SOC_TYPE_LABEL),
             anchor="e",
         ).pack(side="left", padx=5, pady=5)
-        ttk.OptionMenu(
+        self._profile_combo = ttk.Combobox(
             selector,
-            self.chipset_select,
-            self.chipset_select.get(),
-            *self._profiles,
-            command=self._load_profile_flags,
-        ).pack(side="left", fill="x", padx=5, pady=5)
+            textvariable=self.chipset_select,
+            values=self._profile_labels,
+            state="readonly",
+        )
+        self._profile_combo.current(0)
+        self._profile_combo.bind("<<ComboboxSelected>>", self._on_profile_selected)
+        self._profile_combo.pack(side="left", fill="x", padx=5, pady=5)
         selector.pack(side="top", fill="x")
 
         actions = ttk.Labelframe(
@@ -326,15 +362,13 @@ class MtkPortPanel(ttk.Labelframe):
             variable=self.pack_type,
             value="img",
         ).grid(column=1, row=0, padx=5, pady=5)
-        self._magisk_arch = ttk.OptionMenu(
+        self._magisk_arch = ttk.Combobox(
             controls,
-            self.target_arch,
-            self.target_arch.get(),
-            "arm64-v8a",
-            "armeabi-v7a",
-            "x86",
-            "x86_64",
+            textvariable=self.target_arch,
+            values=self._arch_choices.labels,
+            state="readonly",
         )
+        self._magisk_arch.current(self._arch_choices.index_for("arm64-v8a"))
         self._magisk_entry = ttk.Entry(controls, textvariable=self.magisk_apk)
         self._magisk_entry.bind("<Button-1>", self._choose_magisk_apk)
         ttk.Checkbutton(
@@ -345,7 +379,7 @@ class MtkPortPanel(ttk.Labelframe):
         ).grid(column=0, row=1, padx=5, pady=5, sticky="w")
         controls.pack(side="top", padx=5, pady=5, fill="x", expand=True)
         options.pack(side="left", padx=5, pady=5, fill="y")
-        self._load_profile_flags(self.chipset_select.get())
+        self._load_profile_flags(self._profile_names[0])
 
 
 __all__ = ["FileChooser", "MtkPortPanel"]

@@ -65,7 +65,7 @@ class PluginStoreLayout:
             fill=X,
         )
 
-        window.logo = _photo_image(data=images.none_byte)
+        window.logo = _photo_image(data=images.placeholder_image)
         scrollable_area_frame = tk.Frame(window)
         scrollable_area_frame.pack(
             fill="both",

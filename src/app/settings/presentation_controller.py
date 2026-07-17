@@ -7,7 +7,7 @@ from typing import Protocol
 
 
 class SettingsServicePort(Protocol):
-    def set_theme(self, theme_name: str) -> None: ...
+    def set_theme(self, theme_id: str) -> None: ...
     def set_language(self, language_name: str) -> bool: ...
     def set_work_path(self, folder: str) -> None: ...
     def set_toggle(self, key: str, value: str | bool) -> str: ...
@@ -39,12 +39,12 @@ class SettingsPresentationController:
         self.report_error(context, exc)
 
     def apply_theme(self) -> None:
-        theme_name = str(self.read_theme())
+        theme_id = str(self.read_theme())
         try:
-            self.service.set_theme(theme_name)
-            self.apply_theme_appearance(theme_name)
+            self.service.set_theme(theme_id)
+            self.apply_theme_appearance(theme_id)
         except Exception as exc:
-            self._handle_error(f"settings.theme.apply_failed: theme={theme_name}", exc)
+            self._handle_error(f"settings.theme.apply_failed: theme={theme_id}", exc)
 
     def apply_toggle(self, key: str, value: str) -> None:
         try:

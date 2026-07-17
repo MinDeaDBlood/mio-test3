@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.app.localization_selection import apply_language
+from src.app.settings.theme import normalize_theme_id
 from src.app.runtime.contexts.contracts import SettingsProtocol, StateBagProtocol
 
 _TOGGLE_KEYS = frozenset({
@@ -41,11 +42,8 @@ class SettingsService:
     settings: SettingsProtocol
     states: StateBagProtocol
 
-    def set_theme(self, theme_name: str) -> None:
-        normalized = str(theme_name).strip().lower()
-        if normalized not in {'light', 'dark'}:
-            raise ValueError('settings_unsupported_theme')
-        self.settings.set_value('theme', normalized)
+    def set_theme(self, theme_id: str) -> None:
+        self.settings.set_value('theme', normalize_theme_id(theme_id))
 
     def set_language(self, language_name: str) -> bool:
         normalized = str(language_name).strip()

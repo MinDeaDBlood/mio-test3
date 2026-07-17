@@ -5,6 +5,7 @@ from collections.abc import Callable
 from tkinter import BooleanVar, LEFT, StringVar, X, ttk
 
 from src.ui.common.windowing import Toplevel
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.contracts import MagiskPatchControllerPort
 from src.ui.tabs.tools.magisk_patch import keys
 from src.ui.warn.dialogs import info_win, warn_win
@@ -21,7 +22,12 @@ class MagiskPatcher(Toplevel):
         self._controller: MagiskPatchControllerPort | None = None
         self.magisk_apk = StringVar()
         self.boot_file = StringVar()
-        self.magisk_arch = StringVar(value="arm64-v8a")
+        self._arch_choices = build_choice_set(
+            self._language, _SUPPORTED_ARCHITECTURES
+        )
+        self.magisk_arch = StringVar(
+            value=self._arch_choices.label_for("arm64-v8a")
+        )
         self.title(self._text(keys.TITLE))
         self._build_ui()
         self.center_on_screen(force=True)
@@ -70,9 +76,12 @@ class MagiskPatcher(Toplevel):
                     self._text(keys.ARCHITECTURE_READ_FAILED_MESSAGE).format(error=exc)
                 )
             else:
-                self.archs.configure(values=architectures)
                 if architectures:
-                    self.magisk_arch.set(architectures[0])
+                    self._arch_choices = build_choice_set(
+                        self._language, tuple(architectures)
+                    )
+                    self.archs.configure(values=self._arch_choices.labels)
+                    self.archs.current(0)
         self.lift()
         self.focus_force()
 
@@ -112,7 +121,7 @@ class MagiskPatcher(Toplevel):
             keep_verity=self.KEEPVERITY.get(),
             keep_force_encrypt=self.KEEPFORCEENCRYPT.get(),
             recovery_mode=self.RECOVERYMODE.get(),
-            arch=self.magisk_arch.get(),
+            arch=self._arch_choices.value_at(self.archs.current()),
             on_success=self._handle_success,
             on_error=self._handle_error,
         )
@@ -180,8 +189,9 @@ class MagiskPatcher(Toplevel):
             arch_frame,
             state="readonly",
             textvariable=self.magisk_arch,
-            values=_SUPPORTED_ARCHITECTURES,
+            values=self._arch_choices.labels,
         )
+        self.archs.current(self._arch_choices.index_for("arm64-v8a"))
         self.archs.pack(side=LEFT, padx=5, pady=5, expand=True, fill=X)
 
         self.IS64BIT = BooleanVar(value=True)

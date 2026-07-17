@@ -12,7 +12,7 @@ class JsonEdit:
     def read(self):
         if not os.path.exists(self.file):
             return {}
-        with open(self.file, 'r+', encoding='utf-8') as pf:
+        with open(self.file, 'r', encoding='utf-8') as pf:
             try:
                 return json.load(pf)
             except (AttributeError, ValueError, json.decoder.JSONDecodeError):

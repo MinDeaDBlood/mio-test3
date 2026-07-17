@@ -24,6 +24,7 @@ from src.ui.common.editor.presenter import (
 )
 from src.ui.common.editor import keys
 from src.ui.common.controls import input_
+from src.ui.common.technical_choices import build_choice_set
 
 
 @lru_cache(maxsize=1)
@@ -70,8 +71,10 @@ class PythonEditor(tk.Frame):
             color_scheme="dracula",
         )
         self.text.pack(side="left", fill="both", expand=True)
-        self.encoding = tk.StringVar(value=self.state.encoding)
-        self.encoding.trace("w", lambda *_: self.load())
+        self._encoding_choices = build_choice_set(self._texts, DEFAULT_ENCODINGS)
+        self.encoding = tk.StringVar(
+            value=self._encoding_choices.label_for(self.state.encoding)
+        )
         f1 = ttk.Frame(self.parent)
         ttk.Button(
             f1, text=self._texts.resolve_required_ui_text(keys.COMMON_EDITOR_WINDOW_CLOSE), command=self.parent.destroy
@@ -106,11 +109,17 @@ class PythonEditor(tk.Frame):
             format_frame,
             text=self._texts.resolve_required_ui_text(keys.ENCODING_LABEL),
         ).pack(padx=5, pady=5, expand=True, side=LEFT, fill=X)
-        encoding_comboxx = ttk.Combobox(
-            format_frame, values=list(DEFAULT_ENCODINGS), textvariable=self.encoding
+        self.encoding_box = ttk.Combobox(
+            format_frame,
+            values=self._encoding_choices.labels,
+            textvariable=self.encoding,
+            state="readonly",
         )
-        encoding_comboxx.pack(fill=X, side=LEFT, padx=5, pady=5, expand=True)
-        encoding_comboxx.bind("<<ComboboxSelected>>", lambda *x: self.load())
+        self.encoding_box.current(
+            self._encoding_choices.index_for(self.state.encoding)
+        )
+        self.encoding_box.pack(fill=X, side=LEFT, padx=5, pady=5, expand=True)
+        self.encoding_box.bind("<<ComboboxSelected>>", lambda *x: self.load())
         format_frame.pack(padx=5, pady=5, fill=X, expand=True)
         self.refs()
 
@@ -201,7 +210,8 @@ class PythonEditor(tk.Frame):
             return
         try:
             self.state = self.controller.change_encoding(
-                self.state, self.encoding.get()
+                self.state,
+                self._encoding_choices.value_at(self.encoding_box.current()),
             )
             self.text.delete(0.0, tk.END)
             data, exc = self.controller.load_content(self.state)

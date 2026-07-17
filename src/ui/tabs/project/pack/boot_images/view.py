@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from tkinter import BOTH, X, StringVar
+from tkinter import BOTH, X
 from tkinter import ttk
 
 from src.ui.localization import LocalizationCatalog
 from src.ui.common.windowing import Toplevel
+from src.ui.common.technical_choices import build_choice_set
 from src.ui.tabs.project.pack.boot_images import keys
 
 
@@ -16,7 +17,9 @@ class BootImagesPack(Toplevel):
         super().__init__(master=master)
         self._texts = texts
         self.title(self._texts.resolve_required_ui_text(keys.WINDOW_TITLE))
-        self.mode = StringVar(master=self, value="boot")
+        self._mode_choices = build_choice_set(
+            self._texts, ("boot", "recovery", "vendor_boot")
+        )
         self._on_run = on_run
         self._build()
         self.center_on_screen(force=True)
@@ -30,12 +33,13 @@ class BootImagesPack(Toplevel):
         ttk.Label(
             wrapper, text=self._texts.resolve_required_ui_text(keys.IMAGE_TYPE_LABEL)
         ).pack(fill=X, padx=5, pady=5)
-        ttk.Combobox(
+        self.mode_box = ttk.Combobox(
             wrapper,
             state="readonly",
-            textvariable=self.mode,
-            values=("boot", "recovery", "vendor_boot"),
-        ).pack(fill=X, padx=5, pady=5)
+            values=self._mode_choices.labels,
+        )
+        self.mode_box.current(self._mode_choices.index_for("boot"))
+        self.mode_box.pack(fill=X, padx=5, pady=5)
         ttk.Button(
             wrapper,
             text=self._texts.resolve_required_ui_text(keys.PACK_BUTTON),
@@ -48,7 +52,7 @@ class BootImagesPack(Toplevel):
         )
 
     def _submit(self) -> None:
-        mode = self.mode.get()
+        mode = self._mode_choices.value_at(self.mode_box.current())
         self.destroy()
         self._on_run(mode)
 

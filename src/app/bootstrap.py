@@ -145,10 +145,14 @@ def _maybe_run_updater(startup_splash):
 def _finalize_main_window(main_window) -> None:
     from PIL.Image import open as open_img
     from src.ui.assets import images
+    from src.ui.assets.loading_indicator import get_loading_indicator
     from src.ui.common.themes.sv_ttk_fixes import do_override_sv_ttk_fonts
 
+    from src.app.runtime.contexts.ui import resolve_theme
+
+    theme_id = resolve_theme().get()
     require_animation().load_gif(
-        open_img(BytesIO(getattr(images, f"loading_{main_window.list2.get()}_byte")))
+        open_img(BytesIO(get_loading_indicator(theme_id)))
     )
     require_animation().init()
     from src.ui.startup_status import (
@@ -268,7 +272,7 @@ def _init_tk(args: list):
         window=main_window,
         theme_var=window_runtime.theme,
         language_var=window_runtime.language,
-        theme_name=settings.theme,
+        theme_id=settings.theme,
         language_name=settings.language,
         transparent_enabled=str(settings.treff) == "1",
         effect_alpha=effect_alpha,

@@ -54,6 +54,8 @@ def compose_settings_tab(window):
         temp_path=runtime.temp_path,
         list_languages=list_language_names,
     )
+    runtime.theme_var.set(controller.get_theme_value())
+    runtime.language_var.set(controller.get_language_value())
     dispatcher = build_ui_dispatcher(host_window=window)
     task_runner = build_ui_task_runner(
         dispatcher=dispatcher,
@@ -74,11 +76,10 @@ def compose_settings_tab(window):
         read_theme=runtime.theme_var.get,
         read_language=runtime.language_var.get,
         report_error=report_settings_error,
-        apply_theme_appearance=lambda theme_name: apply_theme_appearance(
+        apply_theme_appearance=lambda theme_id: apply_theme_appearance(
             window=host_window,
             animation=animation,
-            theme_name=theme_name,
-            loading_variant=window.list2.get(),
+            theme_id=theme_id,
         ),
         apply_transparency_appearance=lambda enabled: apply_transparency_appearance(
             enabled=enabled,

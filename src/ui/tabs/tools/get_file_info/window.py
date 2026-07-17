@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from collections.abc import Callable
 from tkinter import BOTH, TOP, X, Frame, ttk
 
+from src.ui.common.byte_size import format_localized_byte_size
+from src.ui.common.technical_choices import technical_label
 from src.ui.common.windowing import Toplevel
 from src.ui.contracts import GetFileInfoControllerPort
 from src.ui.tabs.tools.get_file_info import keys
@@ -16,13 +19,11 @@ class GetFileInfo(Toplevel):
         language,
         controller: GetFileInfoControllerPort,
         choose_file: Callable[..., str],
-        human_size: Callable[[int], str],
     ) -> None:
         super().__init__()
         self._language = language
         self._controller = controller
         self._choose_file = choose_file
-        self._human_size = human_size
         self.controls = []
         self.title(self._text(keys.TITLE))
         self._build_ui()
@@ -145,13 +146,13 @@ class GetFileInfo(Toplevel):
             ),
             self._row(
                 keys.TYPE_ROW_LABEL,
-                info.file_type,
+                technical_label(self._language, info.file_type),
                 keys.TYPE_COPY_BUTTON,
                 keys.TYPE_COPIED_BUTTON,
             ),
             self._row(
                 keys.HUMAN_SIZE_ROW_LABEL,
-                self._human_size(info.size_bytes),
+                format_localized_byte_size(info.size_bytes, texts=self._language),
                 keys.HUMAN_SIZE_COPY_BUTTON,
                 keys.HUMAN_SIZE_COPIED_BUTTON,
             ),
@@ -163,7 +164,9 @@ class GetFileInfo(Toplevel):
             ),
             self._row(
                 keys.CREATED_TIME_ROW_LABEL,
-                info.created_time,
+                datetime.fromtimestamp(info.created_timestamp).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
                 keys.CREATED_TIME_COPY_BUTTON,
                 keys.CREATED_TIME_COPIED_BUTTON,
             ),

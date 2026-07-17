@@ -64,7 +64,7 @@ def create_unpack_view(*, project_runtime):
         unpack_func=runtime.unpack_func,
         logger=logging,
     )
-    presenter = UnpackPresenter(human_size=runtime.format_bytes_func)
+    presenter = UnpackPresenter(texts=lang)
     view = UnpackGui(
         master=ui_runtime.host_window.tab2,
         current_project_name=ui_runtime.current_project_name,
