@@ -11,12 +11,12 @@ from src.ui.tabs.project.unpack.boot_images import keys
 
 class BootImagesUnpack(Toplevel):
     def __init__(
-        self, *, texts: LocalizationCatalog, on_run: Callable[[str], object]
+        self, *, texts: LocalizationCatalog, on_run: Callable[[str], object], master=None
     ) -> None:
-        super().__init__()
+        super().__init__(master=master)
         self._texts = texts
         self.title(self._texts.resolve_required_ui_text(keys.WINDOW_TITLE))
-        self.mode = StringVar(value="boot")
+        self.mode = StringVar(master=self, value="boot")
         self._on_run = on_run
         self._build()
         self.center_on_screen(force=True)

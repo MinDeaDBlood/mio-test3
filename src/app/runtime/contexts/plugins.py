@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from src.app.runtime.contexts.contracts import (
     ModuleErrorCodesProtocol,
-    ModuleManagerProtocol,
+    PluginGatewayProtocol,
     ProjectManagerProtocol,
     SettingsProtocol,
     VariableProtocol,
@@ -12,6 +12,7 @@ from src.app.runtime.contexts.contracts import (
 from src.app.runtime.contexts.paths import resolve_temp_path
 from src.app.runtime.contexts.project_defaults import CommonProjectDefaults
 from src.app.runtime.contexts.projects import resolve_common_project_defaults
+from src.platform.plugin_lifecycle import PluginLifecycleAdapter
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,7 @@ def resolve_module_exec(module_exec: str | None = None) -> str:
 
 
 
-def resolve_module_manager(module_manager: ModuleManagerProtocol | None = None):
+def resolve_module_manager(module_manager: object | None = None):
     if module_manager is not None:
         return module_manager
     from src.app.runtime.core_access import require_module_manager
@@ -48,6 +49,26 @@ def resolve_module_manager(module_manager: ModuleManagerProtocol | None = None):
         return bundle.module_manager
     return require_module_manager()
 
+
+
+def resolve_plugin_gateway(
+    plugin_gateway: PluginGatewayProtocol | None = None,
+) -> PluginGatewayProtocol:
+    if plugin_gateway is not None:
+        return plugin_gateway
+    from src.platform.plugin_gateway import PluginGateway
+
+    return PluginGateway(resolve_module_manager())
+
+
+def resolve_plugin_lifecycle(
+    plugin_lifecycle: PluginLifecycleAdapter | None = None,
+) -> PluginLifecycleAdapter:
+    if plugin_lifecycle is not None:
+        return plugin_lifecycle
+    from src.platform.plugin_lifecycle import build_plugin_lifecycle_adapter
+
+    return build_plugin_lifecycle_adapter(resolve_module_manager())
 
 
 def resolve_module_error_codes(module_error_codes: ModuleErrorCodesProtocol | None = None):
@@ -83,5 +104,7 @@ __all__ = [
     'resolve_module_error_codes',
     'resolve_module_exec',
     'resolve_module_manager',
+    'resolve_plugin_gateway',
+    'resolve_plugin_lifecycle',
     'resolve_plugin_execute_defaults',
 ]

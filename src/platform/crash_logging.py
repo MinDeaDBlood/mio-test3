@@ -1,6 +1,5 @@
 """Process wide logging and crash capture for the earliest startup stage."""
 from __future__ import annotations
-
 import atexit
 import faulthandler
 import logging
@@ -13,7 +12,6 @@ from threading import ExceptHookArgs
 import time
 from types import TracebackType
 from typing import Any, TextIO
-
 from src.platform.emergency_logging import write_emergency_fallback
 from src.platform.logging_handlers import (
     LOG_DATE_FORMAT,
@@ -29,6 +27,7 @@ from src.platform.logging_handlers import (
 from src.platform.operation_logging import (
     DEFAULT_OPERATION,
     current_operation,
+    current_operation_id,
     operation_context,
     render_details,
     reset_current_operation,
@@ -36,7 +35,6 @@ from src.platform.operation_logging import (
 )
 from src.platform.startup_watchdog import start_watchdog, stop_watchdog
 from uuid import uuid4
-
 ACTIVE_LOG_PATH_ENV = 'MIO_ACTIVE_LOG_PATH'
 MAX_LOG_BYTES = 10 * 1024 * 1024
 LOG_BACKUP_COUNT = 3
@@ -384,6 +382,7 @@ __all__ = [
     'MIO_FILE_HANDLER_ATTR',
     'MIO_FILE_HANDLER_PATH_ATTR',
     'current_operation',
+    'current_operation_id',
     'ensure_runtime_layout',
     'flush_logging',
     'get_active_log_path',

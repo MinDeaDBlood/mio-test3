@@ -15,22 +15,29 @@ from src.ui.tabs.project.pack.super.presenter import (
 from src.ui.tabs.project.pack.super import keys
 
 
-class DynamicPartitionsInfo(Toplevel):
-    pass
-
-
 class PackSuper(Toplevel):
     """Super image pack window. Workflow operations are delegated to a controller."""
 
-    def __init__(self, *, texts: LocalizationCatalog, default_group_name: str, emit):
-        super().__init__()
+    def __init__(
+        self,
+        *,
+        texts: LocalizationCatalog,
+        default_group_name: str,
+        emit,
+        master=None,
+    ):
+        super().__init__(master=master)
         self._texts = texts
         self._emit = emit
         self.controller = None
         self._start_animation = None
         self._stop_animation = None
         self._show_error = None
-        self.title(self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_PACK_SUPER))
+        self.title(
+            self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_PACK_SUPER
+            )
+        )
         self.super_size = IntVar(value=9126805504)
         self.is_sparse = BooleanVar()
         self.super_type = IntVar(value=1)
@@ -61,7 +68,10 @@ class PackSuper(Toplevel):
 
     def _build_layout(self):
         settings_frame = ttk.LabelFrame(
-            self, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_PARTITION_LAYOUT)
+            self,
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_PARTITION_LAYOUT
+            ),
         )
         settings_frame.pack(fill=BOTH)
         attribute_frame = ttk.LabelFrame(
@@ -69,10 +79,18 @@ class PackSuper(Toplevel):
             text=self._texts.resolve_required_ui_text(keys.ATTRIBUTE_GROUP_TITLE),
         )
         attribute_frame.pack(fill=BOTH)
-        group_frame = ttk.LabelFrame(self, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_SETTINGS_GROUP_TITLE))
+        group_frame = ttk.LabelFrame(
+            self,
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_SETTINGS_GROUP_TITLE
+            ),
+        )
         group_frame.pack(fill=BOTH)
         list_frame = ttk.LabelFrame(
-            self, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_INCLUDED_PARTITIONS)
+            self,
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_INCLUDED_PARTITIONS
+            ),
         )
         list_frame.pack(fill=BOTH, expand=True)
 
@@ -97,18 +115,24 @@ class PackSuper(Toplevel):
             value="none",
         ).pack(side=LEFT, padx=10, pady=10)
 
-        Label(group_frame, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_GROUP_NAME)).pack(
-            side=LEFT, padx=10, pady=10
-        )
+        Label(
+            group_frame,
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_GROUP_NAME
+            ),
+        ).pack(side=LEFT, padx=10, pady=10)
         group_combo = ttk.Combobox(
             group_frame,
             textvariable=self.group_name,
             values=("qti_dynamic_partitions", "main", "mot_dp_group"),
         )
         group_combo.pack(side=LEFT, padx=10, pady=10, fill=BOTH)
-        Label(group_frame, text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_SUPER_SIZE)).pack(
-            side=LEFT, padx=10, pady=10
-        )
+        Label(
+            group_frame,
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_SUPER_SIZE
+            ),
+        ).pack(side=LEFT, padx=10, pady=10)
         size_entry = ttk.Entry(group_frame, textvariable=self.super_size)
         size_entry.pack(side=LEFT, padx=10, pady=10)
         size_entry.bind(
@@ -125,7 +149,9 @@ class PackSuper(Toplevel):
 
         ttk.Checkbutton(
             self,
-            text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_CREATE_SPARSE_IMAGE),
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_CREATE_SPARSE_IMAGE
+            ),
             variable=self.is_sparse,
             onvalue=True,
             offvalue=False,
@@ -134,7 +160,9 @@ class PackSuper(Toplevel):
         actions = Frame(self)
         ttk.Checkbutton(
             actions,
-            text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_REMOVE_ORIGINAL_FILE),
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_REMOVE_ORIGINAL_FILE
+            ),
             variable=self.delete_source_file,
             onvalue=True,
             offvalue=False,
@@ -147,7 +175,9 @@ class PackSuper(Toplevel):
         ).pack(side=RIGHT, padx=10, pady=10)
         self.generate_button = ttk.Button(
             actions,
-            text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_GENERATE_LIST),
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_GENERATE_LIST
+            ),
             command=self.generate_async,
         )
         self.generate_button.pack(side=LEFT, padx=10, pady=10, fill=BOTH)
@@ -213,7 +243,9 @@ class PackSuper(Toplevel):
         if result:
             output_path = result.output_path
             self._emit(
-                self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_PACK_OUTPUT_SUCCESS_FORMAT)
+                self._texts.resolve_required_ui_text(
+                    keys.PROJECT_PACK_SUPER_WINDOW_PACK_OUTPUT_SUCCESS_FORMAT
+                )
                 % output_path
             )
             if hasattr(result, "output_logical_size"):
@@ -254,9 +286,9 @@ class PackSuper(Toplevel):
         if not result.valid:
             self.super_size.set(result.suggested_size)
             ask_win(
-                self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_PACK_SUPER_SIZE_TOO_SMALL).format(
-                    self.super_size.get()
-                ),
+                self._texts.resolve_required_ui_text(
+                    keys.PROJECT_PACK_SUPER_WINDOW_PACK_SUPER_SIZE_TOO_SMALL
+                ).format(self.super_size.get()),
                 texts=self._texts,
                 ok=self._texts.resolve_required_ui_text(
                     keys.SIZE_TOO_SMALL_CONFIRM_BUTTON
@@ -272,7 +304,10 @@ class PackSuper(Toplevel):
 
     def generate_async(self):
         self.generate_button.config(
-            text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_WORKING), state="disabled"
+            text=self._texts.resolve_required_ui_text(
+                keys.PROJECT_PACK_SUPER_WINDOW_WORKING
+            ),
+            state="disabled",
         )
         self._require_controller().generate_dynamic_list(
             group_name=self.group_name.get(),
@@ -300,7 +335,10 @@ class PackSuper(Toplevel):
     def _finalize_generate(self):
         if self.winfo_exists():
             self.generate_button.config(
-                text=self._texts.resolve_required_ui_text(keys.PROJECT_PACK_SUPER_WINDOW_GENERATE_LIST), state="normal"
+                text=self._texts.resolve_required_ui_text(
+                    keys.PROJECT_PACK_SUPER_WINDOW_GENERATE_LIST
+                ),
+                state="normal",
             )
 
     def refresh(self):
@@ -323,4 +361,4 @@ class PackSuper(Toplevel):
         self.selected = list(state.selected)
 
 
-__all__ = ["DynamicPartitionsInfo", "PackSuper"]
+__all__ = ["PackSuper"]

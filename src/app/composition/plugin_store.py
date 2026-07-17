@@ -115,7 +115,7 @@ def build_plugin_store_composition(
         settings=runtime.settings,
         temp_path=runtime.temp_path,
         local_db_path=str(PLUGIN_DATABASE_FILE),
-        module_manager=runtime.module_manager,
+        plugin_gateway=runtime.plugin_gateway,
         module_error_codes=runtime.module_error_codes,
         requests_loader=requests_loader,
         download_api_func=download_api_func,

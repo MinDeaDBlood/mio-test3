@@ -12,7 +12,7 @@ from requests import RequestException
 from src.logic.plugins.store_models import PluginCatalogItemProtocol
 
 
-class StoreModuleManagerProtocol(Protocol):
+class StorePluginInstallPort(Protocol):
     def is_installed(self, plugin_id: str) -> bool: ...
     def install(self, package_path: str) -> tuple[object, str]: ...
 
@@ -56,14 +56,14 @@ class StorePluginInstallService:
         *,
         repo_url: str,
         temp_path: str,
-        module_manager: StoreModuleManagerProtocol,
+        plugin_install_port: StorePluginInstallPort,
         module_error_codes: StoreModuleErrorCodesProtocol,
         download_api_func: DownloadApi,
         logger: logging.Logger | None = None,
     ) -> None:
         self.repo_url = repo_url
         self.temp_path = temp_path
-        self.module_manager = module_manager
+        self.plugin_install_port = plugin_install_port
         self.module_error_codes = module_error_codes
         self.download_api_func = download_api_func
         self.logger = logger or logging.getLogger(__name__)
@@ -91,7 +91,7 @@ class StorePluginInstallService:
         repo_by_id = {item.plugin_id: item for item in repository_items}
 
         for dependency_id in depends:
-            if not dependency_id or self.module_manager.is_installed(dependency_id):
+            if not dependency_id or self.plugin_install_port.is_installed(dependency_id):
                 continue
             dependency = repo_by_id.get(dependency_id)
             if dependency is None:
@@ -119,7 +119,7 @@ class StorePluginInstallService:
                     error_reason=dependency_result.error_reason,
                     failing_dependency_id=dependency_id,
                 )
-            if not self.module_manager.is_installed(dependency_id):
+            if not self.plugin_install_port.is_installed(dependency_id):
                 return StoreInstallResult(
                     False,
                     plugin_id,
@@ -185,7 +185,7 @@ class StorePluginInstallService:
                                 raise TypeError(
                                     "Download progress must be numeric or a numeric string."
                                 )
-                install_result, reason_text = self.module_manager.install(local_path)
+                install_result, reason_text = self.plugin_install_port.install(local_path)
                 if install_result != self.module_error_codes.Normal:
                     return StoreInstallResult(
                         False,

@@ -12,10 +12,13 @@ from src.app.plugins.store.presence import (
 from src.app.runtime.contexts.contracts import (
     HostWindowProtocol,
     ModuleErrorCodesProtocol,
-    ModuleManagerProtocol,
+    PluginGatewayProtocol,
     SettingsProtocol,
 )
-from src.app.runtime.contexts.plugins import resolve_module_error_codes, resolve_module_manager
+from src.app.runtime.contexts.plugins import (
+    resolve_module_error_codes,
+    resolve_plugin_gateway,
+)
 from src.app.runtime.contexts.settings import resolve_settings, resolve_states
 from src.app.runtime.contexts.ui import resolve_ui_host_window
 from src.app.ui_feedback import UiDispatcher, build_ui_dispatcher
@@ -34,7 +37,7 @@ def _host_is_alive(host_window: HostWindowProtocol) -> bool:
 class PluginStoreRuntimeContext:
     host_window: HostWindowProtocol
     settings: SettingsProtocol
-    module_manager: ModuleManagerProtocol
+    plugin_gateway: PluginGatewayProtocol
     module_error_codes: ModuleErrorCodesProtocol
     presence: PluginStorePresenceRegistry
     temp_path: str
@@ -50,7 +53,7 @@ def build_plugin_store_runtime_context(
         resolve_ui_host_window(host_window),
     )
     settings = cast(SettingsProtocol, resolve_settings())
-    module_manager = cast(ModuleManagerProtocol, resolve_module_manager())
+    plugin_gateway = resolve_plugin_gateway()
     module_error_codes = cast(ModuleErrorCodesProtocol, resolve_module_error_codes())
     states = cast(PluginStoreStateBagProtocol, resolve_states())
     dispatcher = build_ui_dispatcher(host_window=resolved_host_window)
@@ -58,7 +61,7 @@ def build_plugin_store_runtime_context(
     return PluginStoreRuntimeContext(
         host_window=resolved_host_window,
         settings=settings,
-        module_manager=module_manager,
+        plugin_gateway=plugin_gateway,
         module_error_codes=module_error_codes,
         presence=presence,
         temp_path=str(PLUGIN_DOWNLOAD_DIR),
@@ -70,4 +73,4 @@ def build_plugin_store_runtime_context(
     )
 
 
-__all__ = ['PluginStoreRuntimeContext', 'build_plugin_store_runtime_context']
+__all__ = ["PluginStoreRuntimeContext", "build_plugin_store_runtime_context"]

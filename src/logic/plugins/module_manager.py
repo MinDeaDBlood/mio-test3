@@ -3,11 +3,9 @@ from __future__ import annotations
 import logging
 import os
 
-from src.core import imp
 from src.logic.plugins.runtime import Entry, loader
 from src.logic.common.service_output import build_service_output
 from src.logic.plugins.events import PluginStateChangedEvent, plugin_event_bus
-from src.logic.plugins.execute.service import PluginExecuteService
 from src.logic.plugins.export.service import PluginExportService
 from src.logic.plugins.install.service import PluginInstallService
 from src.logic.plugins.metadata.service import PluginMetadataService
@@ -29,21 +27,6 @@ class ModuleManager:
             return False
         self._load_thread_started = True
         return True
-
-    def load_plugins_and_notify(self) -> None:
-        try:
-            self.load_plugins()
-        # Plugin loading executes third party code. The broad boundary prevents one
-        # plugin from terminating the background loader.
-        except Exception:
-            logging.exception("ModuleManager background plugin load failed")
-        else:
-            try:
-                self.notify_plugin_state_changed()
-            # Event subscribers can belong to third party plugins. Keep this isolation
-            # boundary broad so a subscriber cannot terminate the loader thread.
-            except Exception:
-                logging.exception("ModuleManager background plugin refresh failed")
 
     def request_plugin_list_refresh(self):
         plugin_event_bus.publish(
@@ -92,18 +75,6 @@ class ModuleManager:
             output=build_service_output(),
         )
 
-    def _execute_service(self, runtime) -> PluginExecuteService:
-        return PluginExecuteService(
-            module_dir=self.module_dir,
-            addon_loader=self.addon_loader,
-            addon_entries=self.addon_entries,
-            is_virtual=self.is_virtual,
-            get_name=self.get_name,
-            register_plugin=self.register_plugin,
-            runtime=runtime,
-            logger=self.logger,
-        )
-
     def _export_service(self, output_dir: str, *, output=None) -> PluginExportService:
         return PluginExportService(
             module_dir=self.module_dir,
@@ -142,40 +113,6 @@ class ModuleManager:
     def list_packages(self):
         return self._metadata_service().list_packages()
 
-    def register_plugin(self, plugin_id: str):
-        script_path = os.path.join(self.module_dir, plugin_id)
-        main_py_path = os.path.join(script_path, "main.py")
-        if os.path.exists(main_py_path) and imp:
-            try:
-                module = imp.load_source(plugin_id, main_py_path)
-                if hasattr(module, "entrances"):
-                    for entry, func in module.entrances.items():
-                        self.addon_loader.register(plugin_id, entry, func)
-                elif hasattr(module, "main"):
-                    self.addon_loader.register(
-                        plugin_id, self.addon_entries.main, module.main
-                    )
-                else:
-                    logging.warning(
-                        "Plugin entry point is missing: plugin_id=%s; name=%s",
-                        plugin_id,
-                        self.get_name(plugin_id),
-                    )
-            # Importing a plugin executes arbitrary third party Python code. This is
-            # an intentional isolation boundary, not generic application error handling.
-            except Exception:
-                logging.exception(
-                    "plugins.module_manager.register_failed: plugin_id=%s; name=%s; path=%s",
-                    plugin_id,
-                    self.get_name(plugin_id),
-                    main_py_path,
-                )
-
-    def load_plugins(self):
-        os.makedirs(self.module_dir, exist_ok=True)
-        for plugin_id in self.list_packages():
-            self.register_plugin(plugin_id)
-
     def get_info(self, plugin_id: str, item: str, default=None):
         return self._metadata_service().get_info(plugin_id, item, default)
 
@@ -184,17 +121,6 @@ class ModuleManager:
             return None
         config_path = os.path.join(self.module_dir, plugin_id, "main.json")
         return config_path if os.path.isfile(config_path) else None
-
-    def run(self, plugin_id=None, *, runtime) -> int:
-        result = self._execute_service(runtime).run(plugin_id)
-        if (
-            result == 0
-            and plugin_id
-            and not self.is_installed(plugin_id)
-            and not self.is_virtual(plugin_id)
-        ):
-            self.request_plugin_list_refresh()
-        return result
 
     @staticmethod
     def check_mpk(mpk):

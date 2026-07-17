@@ -65,13 +65,20 @@ def _resolve_command(exe, *, extra_path: bool):
     return command
 
 
-def call(exe, extra_path=True, out: bool = True):
+def call(
+    exe,
+    extra_path=True,
+    out: bool = True,
+    *,
+    log_command=None,
+):
     command = _resolve_command(exe, extra_path=extra_path)
+    rendered_command = command if log_command is None else log_command
     creation_flags = subprocess.CREATE_NO_WINDOW if os.name != 'posix' else 0
     started = time.perf_counter()
     logger.info(
         'process.start: command=%r extra_path=%s tool_bin=%s',
-        command,
+        rendered_command,
         extra_path,
         tool_bin,
     )
@@ -85,7 +92,7 @@ def call(exe, extra_path=True, out: bool = True):
             creationflags=creation_flags,
         )
         process_registry.add(process.pid)
-        logger.debug('process.spawned: pid=%s command=%r', process.pid, command)
+        logger.debug('process.spawned: pid=%s command=%r', process.pid, rendered_command)
         try:
             _stream_process_output(process.stdout, to_stdout=out)
             return_code = process.wait()
@@ -96,13 +103,13 @@ def call(exe, extra_path=True, out: bool = True):
             process.pid,
             return_code,
             time.perf_counter() - started,
-            command,
+            rendered_command,
         )
         return return_code
     except FileNotFoundError:
         logger.exception(
             'process.executable_not_found: command=%r extra_path=%s tool_bin=%s',
-            command,
+            rendered_command,
             extra_path,
             tool_bin,
         )
@@ -110,7 +117,7 @@ def call(exe, extra_path=True, out: bool = True):
     except OSError:
         logger.exception(
             'process.os_error: command=%r extra_path=%s tool_bin=%s',
-            command,
+            rendered_command,
             extra_path,
             tool_bin,
         )
@@ -120,7 +127,7 @@ def call(exe, extra_path=True, out: bool = True):
             logger.warning(
                 'process.still_running_during_cleanup: pid=%s command=%r',
                 process.pid,
-                command,
+                rendered_command,
             )
 
 

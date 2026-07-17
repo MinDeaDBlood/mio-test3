@@ -6,7 +6,7 @@ from collections.abc import Callable
 from src.core.json_store import JsonEdit
 from src.app.runtime.contexts.contracts import (
     ModuleErrorCodesProtocol,
-    ModuleManagerProtocol,
+    PluginGatewayProtocol,
     SettingsProtocol,
 )
 from src.logic.plugins.store_install.service import (
@@ -38,7 +38,7 @@ class PluginStoreRepositorySession:
         settings: SettingsProtocol,
         temp_path: str,
         local_db_path: str,
-        module_manager: ModuleManagerProtocol,
+        plugin_gateway: PluginGatewayProtocol,
         module_error_codes: ModuleErrorCodesProtocol,
         requests_loader: RequestsLoader,
         download_api_func: DownloadApi,
@@ -48,7 +48,7 @@ class PluginStoreRepositorySession:
         self.settings = settings
         self.temp_path = temp_path
         self.local_db_path = local_db_path
-        self.module_manager = module_manager
+        self.plugin_gateway = plugin_gateway
         self.module_error_codes = module_error_codes
         self.requests_loader = requests_loader
         self.download_api_func = download_api_func
@@ -118,7 +118,7 @@ class PluginStoreRepositorySession:
         return StorePluginInstallService(
             repo_url=self.repo,
             temp_path=self.temp_path,
-            module_manager=self.module_manager,
+            plugin_install_port=self.plugin_gateway,
             module_error_codes=self.module_error_codes,
             download_api_func=self.download_api_func,
             logger=self.logger,

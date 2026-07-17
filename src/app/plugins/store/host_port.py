@@ -13,7 +13,7 @@ from src.app.plugins.store.contracts import (
 from src.app.plugins.store.repository import PluginStoreRepositorySession
 from src.app.plugins.store.runtime import PluginStoreRuntimeContext
 from src.app.plugins.store.session import PluginStoreOperationState
-from src.app.runtime.contexts.contracts import ModuleManagerProtocol
+from src.app.runtime.contexts.contracts import PluginGatewayProtocol
 from src.app.ui_feedback import UiDispatcher
 from src.app.ui_tasks import UiTaskRunner
 
@@ -29,7 +29,7 @@ def _is_window_alive(window: AliveWindowProtocol) -> bool:
 class PluginStoreHostPort:
     runtime: PluginStoreRuntimeContext
     state: PluginStoreOperationState
-    module_manager: ModuleManagerProtocol
+    plugin_gateway: PluginGatewayProtocol
     repository: PluginStoreRepositorySession
     dispatcher: UiDispatcher
     task_runner: UiTaskRunner
@@ -54,12 +54,12 @@ def build_plugin_store_host_port(
     return PluginStoreHostPort(
         runtime=runtime,
         state=state,
-        module_manager=runtime.module_manager,
+        plugin_gateway=runtime.plugin_gateway,
         repository=repository,
         dispatcher=runtime.dispatcher,
         task_runner=runtime.task_runner,
         is_alive=lambda: _is_window_alive(window),
-        is_plugin_installed=runtime.module_manager.is_installed,
+        is_plugin_installed=runtime.plugin_gateway.is_installed,
         update_plugin_state=update_plugin_state,
         apply_uninstall_result=apply_uninstall_result,
     )

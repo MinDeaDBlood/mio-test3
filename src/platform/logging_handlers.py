@@ -11,7 +11,7 @@ from src.platform.operation_logging import OPERATION_FILTER
 LOG_FORMAT = (
     '%(asctime)s.%(msecs)03d | %(levelname)-8s | pid=%(process)d | '
     'thread=%(threadName)s | %(name)s | %(filename)s:%(lineno)d | '
-    'operation=%(operation)s | %(message)s'
+    'operation=%(operation)s | op_id=%(operation_id)s | %(message)s'
 )
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 MIO_FILE_HANDLER_ATTR = '_mio_kitchen_tool_log_handler'

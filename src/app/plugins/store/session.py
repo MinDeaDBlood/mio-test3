@@ -24,7 +24,7 @@ class PluginStoreWindowSession:
         self.window = window
         self.logger = logger or logging.getLogger(__name__)
         self.host_window = runtime.host_window
-        self.module_manager = runtime.module_manager
+        self.plugin_gateway = runtime.plugin_gateway
         self.presence = runtime.presence
 
     @staticmethod
@@ -39,9 +39,9 @@ class PluginStoreWindowSession:
 
     def ensure_background_plugin_load(self) -> None:
         try:
-            if self.module_manager.claim_background_load():
+            if self.plugin_gateway.claim_background_load():
                 self.runtime.task_runner.fire_and_forget(
-                    self.module_manager.load_plugins_and_notify
+                    self.plugin_gateway.load_plugins_and_notify
                 )
         except Exception:
             self.logger.exception(

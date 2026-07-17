@@ -5,7 +5,7 @@ import sys
 from collections.abc import Callable
 
 from src.app.background_jobs import start_background_job
-from src.app.runtime.contexts.plugins import resolve_module_manager
+from src.app.runtime.contexts.plugins import resolve_plugin_lifecycle
 from src.app.runtime.contexts.settings import resolve_animation
 from src.app.runtime.contexts.tooling import resolve_tool_self
 from src.app.runtime.contexts.ui import resolve_ui_host_window
@@ -19,8 +19,7 @@ ConfirmRestart = Callable[[], bool]
 def exit_tool() -> None:
     logging.getLogger(__name__).info('Application shutdown requested')
     with operation_context('lifecycle.plugin_shutdown'):
-        module_manager = resolve_module_manager()
-        module_manager.addon_loader.run_entry(module_manager.addon_entries.close)
+        resolve_plugin_lifecycle().shutdown()
     resolve_ui_host_window().destroy()
     flush_logging()
 

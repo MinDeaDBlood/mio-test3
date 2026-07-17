@@ -47,6 +47,16 @@ def _suppress_pillow_debug_noise() -> None:
     logging_setup.suppress_pillow_debug_noise()
 
 
+def _install_runtime_audit() -> None:
+    from src.platform.filesystem_audit import install_filesystem_audit
+    from src.platform.runtime_paths import CONFIG_DIR, LOG_DIR, PLUGINS_DIR, TEMP_DIR
+
+    install_filesystem_audit(
+        roots=(CONFIG_DIR, PLUGINS_DIR, TEMP_DIR),
+        excluded_roots=(LOG_DIR,),
+    )
+
+
 def init_verify() -> None:
     from src.app.composition.crash import show_crash
     from src.ui.startup_issue_presenter import present_startup_issues
@@ -201,7 +211,8 @@ def _init_tk(args: list):
     ensure_runtime_directories()
     prepare_log_files(require_log_dir(), get_tool_log())
     _configure_logging()
-    log_startup_phase('runtime directories and logging ready')
+    _install_runtime_audit()
+    log_startup_phase('runtime directories, logging and audit ready')
 
     try:
         from src.app.localization_selection import load_selected_language
@@ -247,6 +258,9 @@ def _init_tk(args: list):
     from src.app.runtime.core_access import require_project_manager
 
     require_project_manager().set_workspace_path(settings.path)
+    from src.platform.filesystem_audit import register_audit_root
+
+    register_audit_root(settings.path)
     from src.ui.tabs.settings.appearance.actions import apply_initial_appearance
 
     effect_alpha = settings.barlevel

@@ -5,6 +5,7 @@ import logging
 
 from src.app.project_contexts import build_app_boot_context
 from src.app.projects.boot_images.controller import BootImageActionController
+from src.app.runtime.contexts.ui import resolve_ui_host_window
 from src.app.ui_feedback import build_ui_dispatcher, build_ui_notifier
 from src.app.ui_tasks import build_ui_task_runner
 from src.logic.projects.pack.boot_images.service import run as run_pack
@@ -15,13 +16,18 @@ from src.ui.tabs.project.unpack.boot_images.view import BootImagesUnpack
 
 
 def _open(window_type, operation):
-    window = window_type(texts=lang, on_run=lambda _mode: None)
+    host_window = resolve_ui_host_window()
+    window = window_type(
+        texts=lang,
+        on_run=lambda _mode: None,
+        master=host_window,
+    )
     runner = build_ui_task_runner(
         dispatcher=build_ui_dispatcher(host_window=window),
         is_alive=window.winfo_exists,
         logger=logging,
     )
-    notifier = build_ui_notifier(host_window=window)
+    notifier = build_ui_notifier(host_window=host_window)
     runtime = build_app_boot_context(output=build_ui_service_output(texts=lang, notify=notifier.show))
     controller = BootImageActionController(
         runtime=runtime,

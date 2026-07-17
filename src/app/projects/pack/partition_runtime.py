@@ -6,17 +6,18 @@ from src.app.runtime.contexts.projects import (
     resolve_context_rule_file,
     resolve_project_manager,
 )
-from src.app.runtime.contexts.plugins import resolve_module_manager
+from src.app.runtime.contexts.plugins import resolve_plugin_lifecycle
 from src.app.runtime.contexts.settings import resolve_settings
 from src.app.runtime.contexts.ui import resolve_ui_host_window
 from src.logic.common.service_output import ServiceOutput, build_service_output
 from src.logic.projects.pack.runtime_context import PackPartitionRuntimeContext
+from src.platform.plugin_lifecycle import PluginLifecycleAdapter
 
 
 @dataclass(frozen=True)
 class PackPartitionApplicationRuntime:
     workflow: PackPartitionRuntimeContext
-    module_manager: object
+    plugin_lifecycle: PluginLifecycleAdapter
 
 
 def build_pack_partition_runtime(
@@ -38,7 +39,7 @@ def build_pack_partition_runtime(
     )
     return PackPartitionApplicationRuntime(
         workflow=workflow,
-        module_manager=resolve_module_manager(),
+        plugin_lifecycle=resolve_plugin_lifecycle(),
     )
 
 

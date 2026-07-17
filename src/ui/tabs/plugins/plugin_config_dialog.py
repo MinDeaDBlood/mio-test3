@@ -118,7 +118,6 @@ class PluginConfigDialog(Toplevel):
         self.assert_unknown_control = data.info.assert_unknown_control
         if data.info.height.lower() != "none" and data.info.width.lower() != "none":
             self.geometry(f"{data.info.width}x{data.info.height}")
-        self.attributes("-topmost", "true")
         self.resizable(data.info.resize, data.info.resize)
         control_factories = {
             "text": self._text,

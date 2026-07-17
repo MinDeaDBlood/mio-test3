@@ -35,7 +35,7 @@ class PluginStoreUninstallController:
             return False
 
     def _uninstall_worker(self, plugin_id: str) -> PluginUninstallResult:
-        return self.host_port.module_manager.uninstall_plugin(plugin_id)
+        return self.host_port.plugin_gateway.uninstall(plugin_id)
 
     def _apply_result(
         self,

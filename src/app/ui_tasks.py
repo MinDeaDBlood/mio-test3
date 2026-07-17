@@ -104,26 +104,39 @@ class UiTaskRunner:
         active_logger = self.logger or logger
 
         def worker_target() -> None:
-            active_logger.info(
-                'UiTaskRunner worker started: worker=%s exclusive=%s daemon=%s',
-                worker_name,
-                exclusive,
-                daemon,
-            )
-            try:
-                result = worker(*args, **keyword_args)
-            except Exception as error:
-                active_logger.exception('UiTaskRunner.run worker failed: %s', worker_name)
-                if on_error is not None or on_finally is not None:
-                    self.dispatcher.dispatch(finalize_error, error)
-                return
-            finally:
-                if gate_acquired:
-                    self.operation_gate.release()
+            from src.platform.operation_logging import operation_context
 
-            active_logger.info('UiTaskRunner worker completed: %s', worker_name)
-            if on_success is not None or on_finally is not None:
-                self.dispatcher.dispatch(finalize_success, result)
+            with operation_context(
+                f"ui_task:{worker_name}",
+                exclusive=exclusive,
+                daemon=daemon,
+                argument_count=len(args),
+                keyword_names=tuple(sorted(keyword_args)),
+            ):
+                active_logger.info(
+                    'UiTaskRunner worker started: worker=%s exclusive=%s daemon=%s',
+                    worker_name,
+                    exclusive,
+                    daemon,
+                )
+                try:
+                    result = worker(*args, **keyword_args)
+                except Exception as error:
+                    active_logger.exception('UiTaskRunner.run worker failed: %s', worker_name)
+                    if on_error is not None or on_finally is not None:
+                        self.dispatcher.dispatch(finalize_error, error)
+                    return
+                finally:
+                    if gate_acquired:
+                        self.operation_gate.release()
+
+                active_logger.info(
+                    'UiTaskRunner worker completed: worker=%s result_type=%s',
+                    worker_name,
+                    type(result).__name__,
+                )
+                if on_success is not None or on_finally is not None:
+                    self.dispatcher.dispatch(finalize_success, result)
 
         try:
             self.start_worker(worker_target, daemon=daemon)

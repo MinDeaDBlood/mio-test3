@@ -157,6 +157,12 @@ def _initialize_logging() -> None:
             PROJECT_ROOT,
             log_path=_ACTIVE_LOG_PATH,
         )
+        from src.platform.filesystem_audit import install_filesystem_audit
+
+        install_filesystem_audit(
+            roots=(PROJECT_ROOT,),
+            excluded_roots=(_ACTIVE_LOG_PATH.parent,),
+        )
         log_startup_phase('tool.entrypoint.loaded')
         start_startup_watchdog()
     except BaseException as exception:

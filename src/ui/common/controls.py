@@ -37,11 +37,12 @@ def input_(
     text: str = "",
     master: Tk | Toplevel | tkinter.Frame | None = None,
 ) -> str:
-    if not master:
+    owns_window = master is None
+    if master is None:
         master = Toplevel()
     if not title:
         title = texts.resolve_required_ui_text(keys.INPUT_DIALOG_DEFAULT_TITLE)
-    (input_var := StringVar()).set(text)
+    input_var = StringVar(master=master, value=text)
     input_frame = ttk.LabelFrame(master, text=title)
     input_frame.place(relx=0.5, rely=0.5, anchor="center")
     entry = ttk.Entry(input_frame, textvariable=input_var)
@@ -54,7 +55,10 @@ def input_(
         command=input_frame.destroy,
     ).pack(padx=5, pady=5, fill=BOTH, side="bottom")
     input_frame.wait_window()
-    return input_var.get()
+    value = input_var.get()
+    if owns_window and master.winfo_exists():
+        master.destroy()
+    return value
 
 
 class ListBox(Frame):

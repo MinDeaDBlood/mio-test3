@@ -16,7 +16,7 @@ from tkinter import (
 from tkinter import ttk
 
 from src.ui.localization import LocalizationCatalog
-from src.ui.common.windowing import Toplevel
+from src.ui.common.windowing import Toplevel, present_window
 from src.ui.tabs.project.pack.registry import get_output_values
 from src.ui.tabs.project.pack.partition.custom_size_dialog import edit_custom_ext4_sizes
 from src.ui.tabs.project.pack.partition import keys
@@ -30,16 +30,13 @@ class PackPartition(Toplevel):
         texts: LocalizationCatalog,
         controller,
         host_window,
-        auto_start: bool,
     ):
         self._texts = texts
         self.chosen_parts: list = parts
         self.custom_size = {}
-        self._captured_form: dict[str, object] | None = None
         self.controller = controller
-        self._auto_start = auto_start
-        super().__init__()
         self.host_window = host_window
+        super().__init__(master=host_window)
         self.spatchvb = IntVar(master=self)
         self.ext4_packer = StringVar(master=self, value="make_ext4fs")
         self.format = StringVar(master=self, value="raw")
@@ -56,10 +53,6 @@ class PackPartition(Toplevel):
         self.fs_conver = BooleanVar(master=self, value=False)
         self.erofs_old_kernel = BooleanVar(master=self, value=False)
 
-        if self._auto_start:
-            self.withdraw()
-            self.after_idle(self._auto_start_pack)
-            return
 
         self.title(self._texts.resolve_required_ui_text(keys.PROJECT_PACK_PARTITION_WINDOW_PACK_OPTIONS))
         lf1 = ttk.LabelFrame(
@@ -244,7 +237,7 @@ class PackPartition(Toplevel):
         ttk.Button(
             self,
             text=self._texts.resolve_required_ui_text(keys.CANCEL_BUTTON),
-            command=self.destroy,
+            command=self.cancel,
         ).pack(side="left", padx=2, pady=2, fill=X, expand=True)
         ttk.Button(
             self,
@@ -252,26 +245,20 @@ class PackPartition(Toplevel):
             command=self.start_async,
             style="Accent.TButton",
         ).pack(side="left", padx=2, pady=2, fill=X, expand=True)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.center_on_screen(force=True)
-        self.controller.notify_before_pack()
+        logging.getLogger(__name__).info(
+            "partition_pack.options_opened: selected=%r",
+            self.chosen_parts,
+        )
 
-    def _capture_form(self) -> dict[str, object]:
-        form = self._collect_form_values()
-        self._captured_form = form
-        return form
-
-    def _auto_start_pack(self):
-        try:
-            self._capture_form()
-            self.start_()
-        finally:
-            try:
-                self.destroy()
-            except Exception:
-                logging.exception("PackPartition auto-start cleanup failed")
-
-    def start_(self):
-        return self.packrom()
+    def cancel(self) -> None:
+        logging.getLogger(__name__).info(
+            "partition_pack.options_cancelled: selected=%r",
+            self.chosen_parts,
+        )
+        self.destroy()
+        present_window(self.host_window)
 
     def start_async(self):
         if not self.controller.project_exists():
@@ -282,16 +269,31 @@ class PackPartition(Toplevel):
                 "red",
             )
             return False
-        form = self._capture_form()
+        form = self._collect_form_values()
         try:
             self.controller.validate_form(form)
         except ValueError as exc:
+            logging.getLogger(__name__).warning(
+                "partition_pack.options_validation_failed: error=%s selected=%r",
+                exc,
+                self.chosen_parts,
+            )
             self.host_window.message_pop(
                 self._texts.resolve_optional(str(exc), default=str(exc)), "red"
             )
             return False
-        self._captured_form = None
+        logging.getLogger(__name__).info(
+            "partition_pack.options_submitted: selected=%r output_format=%s "
+            "ext4_packer=%s fs_convert=%s remove_source_files=%s patch_vbmeta=%s",
+            self.chosen_parts,
+            form["output_format"],
+            form["ext4_packer"],
+            form["fs_convert"],
+            form["remove_source_files"],
+            form["patch_vbmeta"],
+        )
         self.destroy()
+        present_window(self.host_window)
         self.controller.execute_background(form)
         return None
 
@@ -328,24 +330,3 @@ class PackPartition(Toplevel):
             "erofs_old_kernel": self.erofs_old_kernel.get(),
             "custom_size": dict(self.custom_size),
         }
-
-    def packrom(self) -> bool | None:
-        if not self.controller.project_exists():
-            self.host_window.message_pop(
-                self._texts.resolve_required_ui_text(
-                    keys.PACK_PROJECT_REQUIRED_MESSAGE
-                ),
-                "red",
-            )
-            return False
-        form = self._captured_form or self._collect_form_values()
-        self._captured_form = None
-        try:
-            self.controller.validate_form(form)
-        except ValueError as exc:
-            self.host_window.message_pop(
-                self._texts.resolve_optional(str(exc), default=str(exc)), "red"
-            )
-            return False
-        self.controller.execute_background(form)
-        return None

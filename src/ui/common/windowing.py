@@ -12,7 +12,6 @@ from src.ui.common.window_appearance import register_window
 from src.ui.localization import LocalizationCatalog
 
 
-
 _MAIN_WINDOW: ReferenceType[Any] | None = None
 
 
@@ -27,6 +26,7 @@ def _registered_main_window() -> Any | None:
         return None
     return _MAIN_WINDOW()
 
+
 def _window_exists(window: Any | None) -> bool:
     if window is None:
         return False
@@ -36,13 +36,25 @@ def _window_exists(window: Any | None) -> bool:
         return False
 
 
+def _window_manager_state(window: Any) -> str | None:
+    """Read the native Tk window state without calling a shadowable widget method.
+
+    Several MIO Kitchen windows legitimately store their presentation model in an
+    instance attribute named ``state``. Calling ``window.state()`` therefore is
+    unsafe because the instance attribute can hide Tk's method. Querying Tk
+    directly avoids that name collision for every Toplevel subclass.
+    """
+    try:
+        return str(window.tk.call("wm", "state", window._w))
+    except (AttributeError, TclError):
+        return None
+
+
 def _window_is_visible(window: Any | None) -> bool:
     if window is None or not _window_exists(window):
         return False
-    try:
-        return str(window.state()) != "withdrawn"
-    except (AttributeError, TclError):
-        return True
+    state = _window_manager_state(window)
+    return state != "withdrawn" if state is not None else True
 
 
 def _as_toplevel(window: Any | None) -> Any | None:
@@ -76,10 +88,10 @@ def resolve_window_owner(master: Any | None = None) -> Any | None:
     return root if _window_exists(root) else None
 
 
-def present_window(window: Any, *, owner: Any | None = None) -> None:
+def present_window(window: Any, *, owner: Any | None = None) -> bool:
     """Place a visible application window above its owner and give it focus."""
     if not _window_exists(window) or not _window_is_visible(window):
-        return
+        return False
 
     resolved_owner = resolve_window_owner(owner)
     if resolved_owner is window or not _window_is_visible(resolved_owner):
@@ -110,6 +122,7 @@ def present_window(window: Any, *, owner: Any | None = None) -> None:
             window.focus_set()
         except (AttributeError, TclError):
             pass
+    return True
 
 
 def _release_temporary_topmost(window: Any) -> None:
@@ -137,6 +150,8 @@ class Toplevel(TkToplevel):
         self._window_owner = owner
         self._focus_on_open = focus_on_open
         self._centered_once = False
+        self._foreground_scheduled = False
+        self._foreground_presented = False
         register_window(self)
 
         if owner is not None and owner is not self and _window_is_visible(owner):
@@ -149,14 +164,34 @@ class Toplevel(TkToplevel):
         if center_on_open:
             self.center_after_layout()
         if focus_on_open:
-            self.after_idle(self.present_in_foreground)
+            self._schedule_foreground_presentation()
 
-    def _on_window_mapped(self, _event: object) -> None:
-        if self._focus_on_open:
-            self.present_in_foreground()
+    def _on_window_mapped(self, event: tk.Event) -> None:
+        # Tk can deliver descendant widget map events through the toplevel bind tag.
+        # Only the actual window map event may trigger foreground presentation.
+        if event.widget is not self:
+            return
+        self._schedule_foreground_presentation()
 
-    def present_in_foreground(self) -> None:
-        present_window(self, owner=self._window_owner)
+    def _schedule_foreground_presentation(self) -> None:
+        if (
+            not self._focus_on_open
+            or self._foreground_scheduled
+            or self._foreground_presented
+        ):
+            return
+        self._foreground_scheduled = True
+        self.after_idle(self._present_scheduled_window)
+
+    def _present_scheduled_window(self) -> None:
+        self._foreground_scheduled = False
+        self.present_in_foreground()
+
+    def present_in_foreground(self, *, force: bool = False) -> None:
+        if self._foreground_presented and not force:
+            return
+        if present_window(self, owner=self._window_owner):
+            self._foreground_presented = True
 
     def center_after_layout(self, *, force: bool = False) -> None:
         self.after_idle(lambda: self.center_on_screen(force=force))

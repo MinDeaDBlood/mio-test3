@@ -39,7 +39,6 @@ class PluginUninstallDialog(Toplevel):
         self.ask()
 
     def ask(self):
-        self.attributes("-topmost", "true")
         self.title(self._texts.resolve_required_ui_text(keys.UNINSTALL_DIALOG_TITLE))
         content_frame = ttk.Frame(self)
         content_frame.pack(padx=15, pady=15, fill=BOTH, expand=True)

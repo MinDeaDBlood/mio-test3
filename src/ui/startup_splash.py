@@ -34,11 +34,16 @@ class StartupSplash:
     """Borderless splash tied to the already created Tk application root."""
 
     def __init__(self, main_window: Any, image_path: Path) -> None:
-        from tkinter import Label, Toplevel
+        from tkinter import Label
         from PIL import Image, ImageTk
+        from src.ui.common.windowing import Toplevel
 
         self._main_window = main_window
-        self._window = Toplevel(main_window)
+        self._window = Toplevel(
+            main_window,
+            center_on_open=False,
+            focus_on_open=False,
+        )
         self._window.withdraw()
         self._window.overrideredirect(True)
         try:

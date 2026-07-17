@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 import tkinter as tk
-from tkinter import BOTH, TOP, X, IntVar, Toplevel as TkToplevel
+from tkinter import BOTH, TOP, X, IntVar
 from tkinter import ttk
 
 from src.ui.localization import LocalizationCatalog
@@ -66,7 +66,7 @@ def ask_win(
     cancel=None,
     wait=True,
     is_top: bool = False,
-    master: Optional[tk.Misc | TkToplevel] = None,
+    master: Optional[tk.Misc] = None,
 ) -> int:
     request = DialogRequest(
         text=text,
