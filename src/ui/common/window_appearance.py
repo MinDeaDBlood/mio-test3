@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from tkinter import TclError
 from collections.abc import Callable
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 from weakref import WeakSet
 
 from src.ui.common.themes.identifiers import DARK_THEME, require_theme_id
+from src.ui.common.themes.native_palette import apply_native_theme, get_theme_palette
 from src.ui.common.titlebar import TitlebarWindowProtocol, set_title_bar_color
+
 
 
 class AppearanceWindowProtocol(TitlebarWindowProtocol, Protocol):
@@ -21,13 +23,12 @@ class AppearanceWindowProtocol(TitlebarWindowProtocol, Protocol):
 
 _WINDOWS: WeakSet[AppearanceWindowProtocol] = WeakSet()
 _BOUND_WINDOWS: WeakSet[AppearanceWindowProtocol] = WeakSet()
+_THEME_REAPPLY_PENDING: WeakSet[AppearanceWindowProtocol] = WeakSet()
 _THEME_ID = DARK_THEME
 _WINDOW_ALPHA = 1.0
 _MIN_ALPHA = 0.55
 _MAX_ALPHA = 1.0
 _DEFAULT_EFFECT_ALPHA = 0.90
-_DARK_BACKGROUND = '#101010'
-_LIGHT_BACKGROUND = '#f0f0f0'
 
 
 def normalize_window_alpha(value: object, *, default: float = _DEFAULT_EFFECT_ALPHA) -> float:
@@ -49,22 +50,31 @@ def _window_exists(window: AppearanceWindowProtocol) -> bool:
         return False
 
 
-def _apply_to_window(window: AppearanceWindowProtocol) -> None:
+def _apply_to_window(
+    window: AppearanceWindowProtocol,
+    *,
+    include_widget_tree: bool = True,
+) -> None:
     if not _window_exists(window):
         return
-    is_dark_theme = _THEME_ID == DARK_THEME
+    palette = get_theme_palette(_THEME_ID)
     try:
         set_title_bar_color(window, True)
     except (AttributeError, OSError, TclError, TypeError, ValueError):
-        return
+        pass
     try:
-        window.configure(background=_DARK_BACKGROUND if is_dark_theme else _LIGHT_BACKGROUND)
+        window.configure(background=palette.window_background)
     except (AttributeError, TclError):
         pass
     try:
         window.attributes('-alpha', _WINDOW_ALPHA)
     except (AttributeError, TclError):
         pass
+    if include_widget_tree:
+        try:
+            apply_native_theme(window, _THEME_ID)
+        except (AttributeError, TclError, TypeError):
+            pass
 
 
 def register_window(window: object) -> None:
@@ -80,11 +90,37 @@ def register_window(window: object) -> None:
         return
     try:
         _BOUND_WINDOWS.add(typed_window)
-        typed_window.bind('<Map>', lambda _event: _apply_to_window(typed_window), add='+')
-        typed_window.bind('<FocusIn>', lambda _event: _apply_to_window(typed_window), add='+')
+        def apply_after_map(event: Any) -> None:
+            if event.widget is typed_window:
+                _apply_to_window(typed_window)
+
+        typed_window.bind('<Map>', apply_after_map, add='+')
+        typed_window.bind(
+            '<FocusIn>',
+            lambda _event: _apply_to_window(typed_window, include_widget_tree=False),
+            add='+',
+        )
         typed_window.after_idle(lambda: _apply_to_window(typed_window))
     except (AttributeError, TclError):
         return
+
+
+def _reapply_theme_after_ttk(window: AppearanceWindowProtocol) -> None:
+    try:
+        _THEME_REAPPLY_PENDING.discard(window)
+    except TypeError:
+        return
+    _apply_to_window(window)
+
+
+def _schedule_theme_reapply(window: AppearanceWindowProtocol) -> None:
+    if window in _THEME_REAPPLY_PENDING:
+        return
+    try:
+        _THEME_REAPPLY_PENDING.add(window)
+        window.after_idle(lambda: _reapply_theme_after_ttk(window))
+    except (AttributeError, TclError, TypeError):
+        _THEME_REAPPLY_PENDING.discard(window)
 
 
 def apply_theme_to_windows(theme_id: str) -> None:
@@ -92,6 +128,7 @@ def apply_theme_to_windows(theme_id: str) -> None:
     _THEME_ID = require_theme_id(theme_id)
     for window in tuple(_WINDOWS):
         _apply_to_window(window)
+        _schedule_theme_reapply(window)
 
 
 def apply_transparency_to_windows(*, enabled: bool, effect_alpha: object = _DEFAULT_EFFECT_ALPHA) -> float:

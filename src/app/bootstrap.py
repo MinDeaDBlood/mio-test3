@@ -80,8 +80,19 @@ def restart(window=None):
     )
 
 
+def _reveal_main_window() -> None:
+    from src.app.runtime.contexts.ui import resolve_ui_host_window
+
+    main_window = resolve_ui_host_window()
+    main_window.deiconify()
+    main_window.lift()
+    main_window.update_idletasks()
+
+
 def _close_startup_splash_for_interaction(startup_splash, *, phase: str):
     if startup_splash is None:
+        _reveal_main_window()
+        log_startup_phase(phase)
         return None
     startup_splash.close()
     log_startup_phase(phase)
@@ -311,6 +322,8 @@ def _init_tk(args: list):
     timeline.mark("finalize_main_window")
     if startup_splash is not None:
         startup_splash.close()
+    else:
+        _reveal_main_window()
     stop_startup_watchdog()
     log_startup_phase('main window revealed')
     require_states().inited = True

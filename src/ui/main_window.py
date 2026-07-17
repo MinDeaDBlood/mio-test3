@@ -24,6 +24,7 @@ class Tool(_MainWindowBase):
         from src.ui.common.themes.sv_ttk_fixes import do_set_window_deffont
 
         super().__init__(tkdnd_library_root=tkdnd_library_root)
+        self.withdraw()
         register_main_window(self)
         register_window(self)
         self._texts = texts
