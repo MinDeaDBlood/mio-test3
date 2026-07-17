@@ -89,12 +89,18 @@ def _reveal_main_window() -> None:
     main_window.update_idletasks()
 
 
-def _close_startup_splash_for_interaction(startup_splash, *, phase: str):
+def _close_startup_splash_for_interaction(
+    startup_splash,
+    *,
+    phase: str,
+    reveal_main: bool = True,
+):
     if startup_splash is None:
-        _reveal_main_window()
+        if reveal_main:
+            _reveal_main_window()
         log_startup_phase(phase)
         return None
-    startup_splash.close()
+    startup_splash.close(reveal_main=reveal_main)
     log_startup_phase(phase)
     return None
 
@@ -118,6 +124,7 @@ def _show_welcome_if_needed(startup_splash):
     startup_splash = _close_startup_splash_for_interaction(
         startup_splash,
         phase="application startup splash closed before welcome wizard",
+        reveal_main=False,
     )
     _run_startup_modal_interaction(
         name="welcome wizard",
@@ -157,8 +164,6 @@ def _finalize_main_window(main_window) -> None:
     from PIL.Image import open as open_img
     from src.ui.assets import images
     from src.ui.assets.loading_indicator import get_loading_indicator
-    from src.ui.common.themes.sv_ttk_fixes import do_override_sv_ttk_fonts
-
     from src.app.runtime.contexts.ui import resolve_theme
 
     theme_id = resolve_theme().get()
@@ -198,10 +203,8 @@ def _finalize_main_window(main_window) -> None:
 
         main_window.loops.append(lambda: check_upgrade_async(main_window))
     present_startup_duration(dti() - start, texts=lang, emit=emit_startup_line)
-    if os.name == "nt":
-        do_override_sv_ttk_fonts()
-        if sys.getwindowsversion().major <= 6:
-            present_legacy_windows_warning(texts=lang)
+    if os.name == "nt" and sys.getwindowsversion().major <= 6:
+        present_legacy_windows_warning(texts=lang)
 
 
 def _schedule_cmdline_parse(main_window, args: list[str]) -> None:
@@ -288,6 +291,11 @@ def _init_tk(args: list):
         transparent_enabled=str(settings.treff) == "1",
         effect_alpha=effect_alpha,
     )
+    if os.name == "nt":
+        from src.ui.common.themes.sv_ttk_fixes import do_override_sv_ttk_fonts
+
+        do_override_sv_ttk_fonts()
+        main_window.update_idletasks()
     if is_pro:
         verify.verify(settings.active_code)
     timeline.mark("settings_load")

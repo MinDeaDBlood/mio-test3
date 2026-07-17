@@ -18,6 +18,7 @@ from src.ui.welcome.navigation_presenter import WelcomeNavigationPresenter
 from src.ui.welcome.page_builders import build_done, build_hello, build_license, build_main, build_private, build_set_workdir
 from src.ui.common.window_appearance import current_theme_id
 from src.ui.common.themes.native_palette import apply_native_theme
+from src.ui.common.window_redraw import suspend_window_redraw
 from src.ui.welcome.styles import NAVIGATION_GAP, NAVIGATION_PAD, WelcomeFonts, create_welcome_fonts
 
 
@@ -92,9 +93,16 @@ class Welcome(ttk.Frame):
         self.oobe = self.controller.initial_step()
         try:
             self.change_page(self.oobe)
+            self.main_window.deiconify()
+            self.main_window.lift()
+            self.main_window.update_idletasks()
             self.wait_window()
         finally:
             self.actions.set_oobe_active(False)
+
+    def _clear_frame(self) -> None:
+        for widget in self.frame.winfo_children():
+            widget.destroy()
 
     def _prepare_page_layout(self, step: int) -> None:
         self.page_layout = get_page_layout(step)
@@ -107,36 +115,34 @@ class Welcome(ttk.Frame):
         fit_welcome_window(self.main_window, self, layout=self.page_layout)
 
     def change_page(self, step: int = 0) -> None:
-        self.oobe = self.controller.persist_step(step)
-        self._prepare_page_layout(self.oobe)
-
-        previous_frame = self.frame
-        next_frame = ttk.Frame(self.content_host)
-        self.frame = next_frame
-        try:
+        with suspend_window_redraw(self.main_window):
+            self.oobe = self.controller.persist_step(step)
+            self._prepare_page_layout(self.oobe)
+            self._clear_frame()
             self.frames[self.oobe](self)
-            apply_native_theme(next_frame, current_theme_id())
-            next_frame.update_idletasks()
-            next_frame.grid(row=0, column=0, sticky='nsew')
-            next_frame.tkraise()
-        except Exception:
-            self.frame = previous_frame
-            next_frame.destroy()
-            raise
-        previous_frame.destroy()
+            apply_native_theme(self.frame, current_theme_id())
 
-        nav_state = WelcomeNavigationPresenter.build_state(
-            step=self.oobe,
-            frame_count=len(self.frames),
-            labels=get_labels(self.texts),
-        )
-        self.back.config(state='normal' if nav_state.back_enabled else 'disabled')
-        if nav_state.is_last:
-            self.next.config(text=nav_state.next_text, command=self.destroy_welcome)
-        else:
-            self.next.config(text=nav_state.next_text, command=lambda: self.change_page(self.oobe + 1))
-        self._refresh_window_layout()
-        self.next.focus_set()
+            nav_state = WelcomeNavigationPresenter.build_state(
+                step=self.oobe,
+                frame_count=len(self.frames),
+                labels=get_labels(self.texts),
+            )
+            self.back.config(
+                state='normal' if nav_state.back_enabled else 'disabled'
+            )
+            if nav_state.is_last:
+                self.next.config(
+                    text=nav_state.next_text,
+                    command=self.destroy_welcome,
+                )
+            else:
+                self.next.config(
+                    text=nav_state.next_text,
+                    command=lambda: self.change_page(self.oobe + 1),
+                )
+            self._refresh_window_layout()
+            self.next.focus_set()
+            self.main_window.update_idletasks()
 
     def destroy_welcome(self) -> None:
         self.actions.set_oobe_active(False)

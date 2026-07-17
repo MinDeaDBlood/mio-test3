@@ -88,20 +88,24 @@ class StartupSplash:
         self._window.update()
         logger.info('Application startup splash displayed: %s', image_path)
 
-    def close(self) -> None:
+    def close(self, *, reveal_main: bool = True) -> None:
         try:
             if self._window.winfo_exists():
                 self._window.destroy()
         except Exception:
             logger.exception('Unable to close the application startup splash')
         finally:
-            try:
-                self._main_window.deiconify()
-                self._main_window.lift()
-                self._main_window.update_idletasks()
-            except Exception:
-                logger.exception('Unable to reveal the main window after startup')
-        logger.info('Application startup splash closed')
+            if reveal_main:
+                try:
+                    self._main_window.deiconify()
+                    self._main_window.lift()
+                    self._main_window.update_idletasks()
+                except Exception:
+                    logger.exception('Unable to reveal the main window after startup')
+        logger.info(
+            'Application startup splash closed: reveal_main=%s',
+            reveal_main,
+        )
 
 
 def show_startup_splash(main_window: Any) -> StartupSplash | None:
