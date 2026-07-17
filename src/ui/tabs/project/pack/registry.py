@@ -3,7 +3,12 @@ from __future__ import annotations
 from collections import OrderedDict
 from importlib import import_module
 
-_MODULE_NAMES = ['src.ui.tabs.project.pack.img.view', 'src.ui.tabs.project.pack.dat.view', 'src.ui.tabs.project.pack.br.view']
+_MODULE_NAMES = [
+    'src.ui.tabs.project.pack.img.view',
+    'src.ui.tabs.project.pack.sparse.view',
+    'src.ui.tabs.project.pack.dat.view',
+    'src.ui.tabs.project.pack.br.view',
+]
 
 _SPECS = None
 
