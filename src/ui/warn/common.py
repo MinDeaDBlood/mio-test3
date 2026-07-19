@@ -4,10 +4,7 @@ from src.ui.common.windowing import Toplevel, resolve_window_owner
 
 
 def themed_toplevel(parent=None):
-    popup = Toplevel(master=parent)
-    if parent is not None and parent.winfo_exists():
-        popup.transient(parent)
-    return popup
+    return Toplevel(master=parent)
 
 
 def resolve_parent(master=None):

@@ -9,8 +9,8 @@ from src.core.file_types import gettype
 from src.core.paths import prog_path
 from src.core.process_registry import process_registry
 
-if os.name == 'nt':
-    from ctypes import windll  # type: ignore[attr-defined]
+if sys.platform == 'win32':
+    from ctypes import windll
 
 
 class States:
@@ -30,10 +30,10 @@ class States:
         self.development = False
         self.inited = False
         self.open_source_license = 'GNU AFFERO GENERAL PUBLIC LICENSE V3'
-        if os.name == 'posix':
-            self.root = os.getuid() == 0
-        elif os.name == 'nt':
+        if sys.platform == 'win32':
             self.root = bool(windll.shell32.IsUserAnAdmin())
+        elif os.name == 'posix':
+            self.root = os.getuid() == 0
         else:
             self.root = False
 

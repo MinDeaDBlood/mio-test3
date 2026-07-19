@@ -82,11 +82,15 @@ def restart(window=None):
 
 def _reveal_main_window() -> None:
     from src.app.runtime.contexts.ui import resolve_ui_host_window
+    from src.ui.common.window_appearance import current_window_alpha
+    from src.ui.common.window_reveal import reveal_window_after_layout
 
     main_window = resolve_ui_host_window()
-    main_window.deiconify()
-    main_window.lift()
-    main_window.update_idletasks()
+    reveal_window_after_layout(
+        main_window,
+        target_alpha=current_window_alpha(),
+        focus=True,
+    )
 
 
 def _close_startup_splash_for_interaction(

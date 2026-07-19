@@ -5,6 +5,7 @@ from tkinter import Canvas, Label, Text
 from tkinter.constants import BOTH, RIGHT, TOP, X
 from tkinter import ttk
 
+from src.ui.common.buffered_notebook import BufferedNotebook
 from src.ui.tabs.registry import main_tab_title
 from src.ui.tabs.tasks.view import build_tasks_tab_shell
 
@@ -59,7 +60,7 @@ def build_notebook_shell(window, *, pro_enabled: bool, texts) -> None:
     window.sub_win3 = ttk.Frame(window)
     window.sub_win2.pack(fill=BOTH, side=RIGHT, expand=True)
     window.sub_win3.pack(fill=BOTH, side=RIGHT, expand=True)
-    window.notepad = ttk.Notebook(window.sub_win2)
+    window.notepad = BufferedNotebook(window.sub_win2)
     if not pro_enabled:
         window.tab = ttk.Frame(window.notepad)
     window.tab2 = ttk.Frame(window.notepad)

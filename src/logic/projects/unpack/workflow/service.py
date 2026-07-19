@@ -99,6 +99,17 @@ def unpack(chose: list | dict, form: str = '', *, runtime: UnpackWorkflowRuntime
     operation_ok = True
     processed_any = False
     for partition_name in chose:
+        # Images are source/intermediate artifacts, not unpack workspace
+        # contents.  Discard a stale intermediate before producing a fresh one.
+        work_image_path = os.path.join(work, f'{partition_name}.img')
+        try:
+            if os.path.isfile(work_image_path):
+                os.remove(work_image_path)
+        except OSError:
+            logging.exception(
+                'unpack.workflow.remove_stale_intermediate_failed: path=%s',
+                work_image_path,
+            )
         unpack_compressed_dat(source, work, partition_name, parts, output=output)
         image_path = resolve_image_for_processing(source, work, partition_name)
         if image_path is None:
@@ -106,8 +117,23 @@ def unpack(chose: list | dict, form: str = '', *, runtime: UnpackWorkflowRuntime
             operation_ok = False
             continue
         processed_any = True
-        if not process_existing_image(runtime, work, partition_name, image_path, parts, json_edit):
-            operation_ok = False
+        try:
+            if not process_existing_image(runtime, work, partition_name, image_path, parts, json_edit):
+                operation_ok = False
+        finally:
+            # Sparse and OTA inputs are copied/generated here only so they can be
+            # processed without modifying input.  Keep unpack limited to the
+            # extracted partition directories and its config metadata.
+            if os.path.abspath(image_path) == os.path.abspath(work_image_path):
+                try:
+                    os.remove(work_image_path)
+                except FileNotFoundError:
+                    pass
+                except OSError:
+                    logging.exception(
+                        'unpack.workflow.remove_intermediate_failed: path=%s',
+                        work_image_path,
+                    )
 
     _ensure_config_dir(work)
     json_edit.write(parts)

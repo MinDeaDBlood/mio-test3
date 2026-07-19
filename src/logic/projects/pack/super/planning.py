@@ -52,29 +52,52 @@ def _image_path(work: str | os.PathLike[str], name: str) -> Path:
     return Path(work) / f'{name}.img'
 
 
-def scan_packable_super_images(work: str | os.PathLike[str], selected: Iterable[str] = ()) -> tuple[PackableSuperImage, ...]:
-    selected_set = set(selected)
-    work_path = Path(work)
-    if not work_path.exists():
-        logging.warning('pack.super.state.scan_missing_work_path: work=%s', work_path)
-        return ()
+def _source_paths(work: str | os.PathLike[str] | Iterable[str | os.PathLike[str]]) -> tuple[Path, ...]:
+    if isinstance(work, (str, os.PathLike)):
+        candidates = (Path(work),)
+    else:
+        candidates = tuple(Path(path) for path in work)
+    return tuple(dict.fromkeys(path.resolve() for path in candidates))
 
+
+def _resolve_image_path(
+    work: str | os.PathLike[str] | Iterable[str | os.PathLike[str]],
+    name: str,
+) -> Path | None:
+    for source_path in _source_paths(work):
+        image_path = _image_path(source_path, name)
+        if image_path.exists():
+            return image_path
+    return None
+
+
+def scan_packable_super_images(work: str | os.PathLike[str] | Iterable[str | os.PathLike[str]], selected: Iterable[str] = ()) -> tuple[PackableSuperImage, ...]:
+    selected_set = set(selected)
     entries: list[PackableSuperImage] = []
-    for file_name in sorted(os.listdir(work_path)):
-        if not file_name.endswith('.img'):
+    seen: set[str] = set()
+    for work_path in _source_paths(work):
+        if not work_path.exists():
+            logging.warning('pack.super.state.scan_missing_work_path: work=%s', work_path)
             continue
-        image_path = work_path / file_name
-        name = file_name[:-4]
-        try:
-            if is_empty_img(str(image_path)):
-                entries.append(PackableSuperImage(name=name, image_type='empty', empty=True, selected=name in selected_set))
+        for file_name in sorted(os.listdir(work_path)):
+            if not file_name.endswith('.img'):
                 continue
-            file_type = gettype(str(image_path))
-        except (OSError, ValueError, EOFError, struct.error):
-            logging.exception('pack.super.state.scan_image_failed: image_path=%s', image_path)
-            continue
-        if file_type in PACKABLE_SUPER_IMAGE_TYPES:
-            entries.append(PackableSuperImage(name=name, image_type=file_type, selected=name in selected_set))
+            image_path = work_path / file_name
+            name = file_name[:-4]
+            if name in seen:
+                continue
+            try:
+                if is_empty_img(str(image_path)):
+                    entries.append(PackableSuperImage(name=name, image_type='empty', empty=True, selected=name in selected_set))
+                    seen.add(name)
+                    continue
+                file_type = gettype(str(image_path))
+            except (OSError, ValueError, EOFError, struct.error):
+                logging.exception('pack.super.state.scan_image_failed: image_path=%s', image_path)
+                continue
+            if file_type in PACKABLE_SUPER_IMAGE_TYPES:
+                entries.append(PackableSuperImage(name=name, image_type=file_type, selected=name in selected_set))
+                seen.add(name)
     return tuple(entries)
 
 
@@ -162,13 +185,13 @@ def _load_dynamic_partitions_state(work_path: Path, state: PackSuperInitialState
     return state
 
 
-def validate_super_size(work: str | os.PathLike[str], selected: Iterable[str], requested_size: int) -> SuperSizeValidationResult:
+def validate_super_size(work: str | os.PathLike[str] | Iterable[str | os.PathLike[str]], selected: Iterable[str], requested_size: int) -> SuperSizeValidationResult:
     current_size = 0
     missing: list[str] = []
     for name in selected:
-        image_path = _image_path(work, name)
-        if not image_path.exists():
-            missing.append(str(image_path))
+        image_path = _resolve_image_path(work, name)
+        if image_path is None:
+            missing.append(f'{name}.img')
             continue
         current_size += image_logical_size(image_path)
     if missing:

@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
-from src.platform.welcome_content_repository import WelcomeContentRepository
+from src.app.runtime.contexts.contracts import SettingsProtocol
+from src.logic.welcome.steps import WelcomeStepPolicy
+
+
+@dataclass(frozen=True)
+class WelcomeContentAccess:
+    """Application accessors for welcome resources owned by platform adapters."""
+
+    list_languages: Callable[[], tuple[str, ...]]
+    list_licenses: Callable[[], tuple[str, ...]]
+    read_license: Callable[[str], str]
+    read_private_notice: Callable[[], str]
 
 
 @dataclass(frozen=True)
@@ -25,19 +36,20 @@ class WelcomeLicenseData:
 
 
 class WelcomeController:
+    """Application orchestration for the initial setup workflow."""
+
     def __init__(
         self,
         *,
-        settings,
-        content_service: WelcomeContentRepository,
+        settings: SettingsProtocol,
+        content_service: WelcomeContentAccess,
         current_language: Callable[[], str],
         frame_count: int,
-    ):
-        if frame_count <= 0:
-            raise ValueError("Welcome frame_count must be greater than zero.")
+    ) -> None:
         self.settings = settings
         self.content_service = content_service
         self.current_language = current_language
+        self.step_policy = WelcomeStepPolicy(frame_count)
         self.frame_count = frame_count
 
     def main_data(self) -> WelcomeMainData:
@@ -67,7 +79,9 @@ class WelcomeController:
         selected = licenses[0] if licenses else ""
         text = self.content_service.read_license(selected) if selected else ""
         return WelcomeLicenseData(
-            licenses=licenses, selected_license=selected, license_text=text
+            licenses=licenses,
+            selected_license=selected,
+            license_text=text,
         )
 
     def read_license(self, license_name: str) -> str:
@@ -81,20 +95,19 @@ class WelcomeController:
             value = int(self.settings.oobe)
         except (TypeError, ValueError):
             value = 0
-        return self.clamp_step(value)
+        return self.step_policy.clamp(value)
 
     def persist_step(self, step: int) -> int:
-        normalized = self.clamp_step(step)
+        normalized = self.step_policy.clamp(step)
         self.settings.set_value("oobe", str(normalized))
         return normalized
 
     def clamp_step(self, step: int) -> int:
-        if not isinstance(step, int):
-            raise TypeError("Welcome step must be an integer.")
-        return max(0, min(step, self.frame_count - 1))
+        return self.step_policy.clamp(step)
 
 
 __all__ = [
+    "WelcomeContentAccess",
     "WelcomeController",
     "WelcomeLicenseData",
     "WelcomeMainData",

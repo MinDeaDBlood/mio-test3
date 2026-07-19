@@ -26,10 +26,14 @@ def _open_plugin_editor(target):
 def create_plugin_manager_view(*, master, host_window):
     runtime = build_plugin_ui_runtime_context(host_window)
     notifier = build_ui_notifier(host_window=runtime.host_window)
+
+    def notify_on_ui_thread(**kwargs):
+        return runtime.dispatcher.dispatch(lambda: notifier.show(**kwargs))
+
     controller = PluginManagerController(
         runtime=runtime,
         settings=resolve_settings(),
-        output=build_ui_service_output(texts=lang, notify=notifier.show),
+        output=build_ui_service_output(texts=lang, notify=notify_on_ui_thread),
         logger=logging,
     )
 

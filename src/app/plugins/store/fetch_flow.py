@@ -43,15 +43,23 @@ class PluginStoreFetchController:
     def fetch_db(self, refresh: bool = False) -> PluginStoreFetchResult:
         return self.host_port.repository.fetch(refresh=refresh)
 
-    def request_refresh(self, refresh: bool = False) -> bool:
+    def _initialize_and_fetch(
+        self,
+        initialize: Callable[[], object],
+        refresh: bool,
+    ) -> PluginStoreFetchResult:
+        initialize()
+        return self.fetch_db(refresh)
+
+    def _request_worker(self, worker: Callable[..., PluginStoreFetchResult], *args: object) -> bool:
         view_state = self.host_port.state
         if not view_state.start_fetch():
             self.logger.debug("MpkStore.request_db_refresh: fetch already in progress.")
             return False
         try:
             self.host_port.task_runner.run(
-                self.fetch_db,
-                refresh,
+                worker,
+                *args,
                 on_success=self.apply_result,
                 on_error=self.handle_error,
             )
@@ -59,6 +67,13 @@ class PluginStoreFetchController:
         except (RuntimeError, TypeError, ValueError) as exc:
             self.handle_error(exc)
             return False
+
+    def request_initial_refresh(self, initialize: Callable[[], object]) -> bool:
+        """Initialize the network repository and fetch outside the Tk thread."""
+        return self._request_worker(self._initialize_and_fetch, initialize, False)
+
+    def request_refresh(self, refresh: bool = False) -> bool:
+        return self._request_worker(self.fetch_db, refresh)
 
 
 __all__ = ["PluginStoreFetchController"]

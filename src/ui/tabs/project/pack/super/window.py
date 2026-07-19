@@ -10,15 +10,15 @@ from src.ui.common.controls import ListBox
 from src.ui.common.technical_choices import build_choice_set
 from src.ui.common.windowing import Toplevel
 from src.ui.tabs.project.pack.super.presenter import (
+    apply_initial_super_state,
     describe_pack_super_result,
-    format_packable_super_image,
+    render_packable_super_entries,
 )
 from src.ui.tabs.project.pack.super import keys
 
 
 class PackSuper(Toplevel):
     """Super image pack window. Workflow operations are delegated to a controller."""
-
     def __init__(
         self,
         *,
@@ -27,7 +27,9 @@ class PackSuper(Toplevel):
         emit,
         master=None,
     ):
-        super().__init__(master=master)
+        # Reveal only after the controller and complete widget tree are attached.
+        super().__init__(master=master, auto_show=False)
+        self._repaint_after_move = True
         self._texts = texts
         self._emit = emit
         self.controller = None
@@ -63,9 +65,23 @@ class PackSuper(Toplevel):
         self._start_animation = start_animation
         self._stop_animation = stop_animation
         self._show_error = show_error
-        self.read_list()
-        self.refresh()
         self.center_on_screen(force=True)
+        self.deiconify()
+        controller.request_initial_data(
+            on_success=self._apply_initial_data, on_error=self._handle_initial_data_error
+        )
+
+    def _apply_initial_data(self, result) -> None:
+        if not self.winfo_exists():
+            return
+        state, entries = result
+        apply_initial_super_state(self, state)
+        render_packable_super_entries(self, entries)
+
+    def _handle_initial_data_error(self, error: Exception) -> None:
+        logging.error("Initial super pack data loading failed: %s", error)
+        if self.winfo_exists():
+            self._show_error(str(error))
 
     def _require_controller(self):
         if self.controller is None:
@@ -373,25 +389,12 @@ class PackSuper(Toplevel):
             )
 
     def refresh(self):
-        self.tl.clear()
-        for entry in self._require_controller().scan_images(self.selected):
-            self.tl.insert(
-                format_packable_super_image(entry, texts=self._texts),
-                entry.name,
-                entry.selected,
-            )
+        render_packable_super_entries(
+            self,
+            self._require_controller().scan_images(self.selected)
+        )
 
     def read_list(self):
         state = self._require_controller().load_initial_state()
-        if state.block_device_name:
-            self.block_device_name.set(state.block_device_name)
-        if isinstance(state.super_size, int):
-            self.super_size.set(state.super_size)
-        if state.group_name:
-            self.group_name.set(self._display_group_name(state.group_name))
-        if isinstance(state.super_type, int):
-            self.super_type.set(state.super_type)
-        self.selected = list(state.selected)
-
-
+        apply_initial_super_state(self, state)
 __all__ = ["PackSuper"]

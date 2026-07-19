@@ -46,6 +46,7 @@ class SettingsProtocol(Protocol):
     theme: str
     active_code: str
     path: str | None
+    oobe: object
 
     def load(self) -> object: ...
     def set_value(self, name: str, value: object) -> object: ...

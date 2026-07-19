@@ -87,6 +87,7 @@ class FstabPatchWindow(Toplevel):
             text=message,
             title=self._warning_dialog_title,
             ok=self._warning_dialog_ok,
+            master=self,
         )
 
     def _inform(self, message: str) -> None:
@@ -95,6 +96,7 @@ class FstabPatchWindow(Toplevel):
             texts=self._texts,
             title=self._completion_dialog_title,
             ok=self._completion_dialog_ok,
+            master=self,
         )
 
     def attach(self, *, controller) -> None:
@@ -132,8 +134,11 @@ class FstabPatchWindow(Toplevel):
             return
         for partition in self.partitions:
             self.list_box.insert(
-                f"{partition.name} [{partition.fs_type}]", partition.name
+                f"{partition.name} [{partition.fs_type}]",
+                partition.name,
+                refresh=False,
             )
+        self.list_box.update_ui()
         self.run_button.config(state="normal", text=self._run_text)
 
     def run_patch(self) -> None:

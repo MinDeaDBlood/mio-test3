@@ -10,8 +10,16 @@ from src.ui.common.window_appearance import (
     apply_theme_to_windows,
     apply_transparency_to_windows,
     register_window,
-    suspend_registered_window_redraw,
 )
+
+
+def _apply_theme_once(*, window, theme_id: str) -> None:
+    """Match the stable original order without covers or focus changes."""
+
+    sv_ttk.set_theme(theme_id)
+    window.update_idletasks()
+    apply_theme_to_windows(theme_id)
+    window.update_idletasks()
 
 
 def apply_initial_appearance(
@@ -27,11 +35,7 @@ def apply_initial_appearance(
     theme_var.set(theme_id)
     language_var.set(language_name)
     register_window(window)
-    with suspend_registered_window_redraw():
-        sv_ttk.set_theme(theme_id)
-        window.update_idletasks()
-        apply_theme_to_windows(theme_id)
-        window.update_idletasks()
+    _apply_theme_once(window=window, theme_id=theme_id)
     apply_transparency_to_windows(
         enabled=transparent_enabled,
         effect_alpha=effect_alpha,
@@ -40,13 +44,9 @@ def apply_initial_appearance(
 
 def apply_theme_appearance(*, window, animation, theme_id: str) -> None:
     register_window(window)
-    with suspend_registered_window_redraw():
-        sv_ttk.set_theme(theme_id)
-        window.update_idletasks()
-        apply_theme_to_windows(theme_id)
-        image_data = get_loading_indicator(theme_id)
-        animation.load_gif(open_img(BytesIO(image_data)))
-        window.update_idletasks()
+    _apply_theme_once(window=window, theme_id=theme_id)
+    image_data = get_loading_indicator(theme_id)
+    animation.load_gif(open_img(BytesIO(image_data)))
 
 
 def apply_transparency_appearance(*, enabled: bool, effect_alpha: float | str) -> float:

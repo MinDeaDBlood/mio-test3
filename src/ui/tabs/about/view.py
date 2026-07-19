@@ -52,7 +52,6 @@ def build_about_tab(
         window.tab4,
         text=about_spec.language_credit,
         foreground="orange",
-        background="gray",
     ).pack()
     Label(window.tab4, text=about_spec.footer_text, font=(None, 10)).pack(
         padx=10, pady=10, side="bottom"

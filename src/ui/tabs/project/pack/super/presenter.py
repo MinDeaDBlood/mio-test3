@@ -30,6 +30,30 @@ def format_packable_super_image(
     return f"{entry.name} [{technical_label(texts, entry.image_type)}]"
 
 
+def apply_initial_super_state(view, state) -> None:
+    if state.block_device_name:
+        view.block_device_name.set(state.block_device_name)
+    if isinstance(state.super_size, int):
+        view.super_size.set(state.super_size)
+    if state.group_name:
+        view.group_name.set(view._display_group_name(state.group_name))
+    if isinstance(state.super_type, int):
+        view.super_type.set(state.super_type)
+    view.selected = list(state.selected)
+
+
+def render_packable_super_entries(view, entries) -> None:
+    view.tl.clear()
+    for entry in entries:
+        view.tl.insert(
+            format_packable_super_image(entry, texts=view._texts),
+            entry.name,
+            entry.selected,
+            refresh=False,
+        )
+    view.tl.update_ui()
+
+
 def describe_pack_super_result(
     result: PackSuperResultProtocol,
     *,
@@ -78,6 +102,8 @@ def describe_pack_super_result(
 __all__ = [
     "PackSuperResultProtocol",
     "PackableSuperImageProtocol",
+    "apply_initial_super_state",
     "describe_pack_super_result",
     "format_packable_super_image",
+    "render_packable_super_entries",
 ]

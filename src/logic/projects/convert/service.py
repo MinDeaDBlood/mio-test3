@@ -26,7 +26,7 @@ def iter_refile(suffix: str, *, runtime: ConvertRuntimeContext | None = None):
         raise ValueError(
             "Conversion operation requires an explicit ConvertRuntimeContext."
         )
-    work = runtime.output_path
+    work = runtime.work_path
     try:
         entries = list(os.scandir(work))
     except OSError:
@@ -46,12 +46,12 @@ def list_candidate_groups(
     groups: dict[str, list[str]] = {
         source_format: [] for source_format in INPUT_FORMATS
     }
-    output_work = runtime.output_path
+    input_work = runtime.work_path
     try:
-        output_entries = list(os.scandir(output_work))
+        input_entries = list(os.scandir(input_work))
     except OSError:
-        output_entries = []
-    for entry in sorted(output_entries, key=lambda item: item.name.lower()):
+        input_entries = []
+    for entry in sorted(input_entries, key=lambda item: item.name.lower()):
         if not entry.is_file():
             continue
         if entry.name.endswith(".new.dat.br"):
@@ -62,21 +62,13 @@ def list_candidate_groups(
             groups["dat"].append(entry.name)
 
     seen_images: set[tuple[str, str]] = set()
-    image_directories = dict.fromkeys(
-        os.path.abspath(path)
-        for path in (
-            runtime.output_path,
-            runtime.work_path,
-        )
-    )
-    for image_directory in image_directories:
-        for item_name, file_type in iter_image_file_types(image_directory):
-            group_name = "sparse" if file_type == "sparse" else "raw"
-            key = (group_name, item_name)
-            if key in seen_images:
-                continue
-            seen_images.add(key)
-            groups[group_name].append(item_name)
+    for item_name, file_type in iter_image_file_types(runtime.work_path):
+        group_name = "sparse" if file_type == "sparse" else "raw"
+        key = (group_name, item_name)
+        if key in seen_images:
+            continue
+        seen_images.add(key)
+        groups[group_name].append(item_name)
     return groups
 
 
@@ -105,29 +97,10 @@ def list_candidates(
         return list(iter_refile(".new.dat.xz", runtime=runtime))
     if from_format == "dat":
         return list(iter_refile(".new.dat", runtime=runtime))
-    image_directories = dict.fromkeys(
-        os.path.abspath(path)
-        for path in (
-            runtime.output_path,
-            runtime.work_path,
-        )
-    )
     if from_format == "sparse":
-        return list(
-            dict.fromkeys(
-                item
-                for directory in image_directories
-                for item in list_sparse_candidates(directory)
-            )
-        )
+        return list_sparse_candidates(runtime.work_path)
     if from_format == "raw":
-        return list(
-            dict.fromkeys(
-                item
-                for directory in image_directories
-                for item in list_raw_candidates(directory)
-            )
-        )
+        return list_raw_candidates(runtime.work_path)
     return []
 
 
@@ -253,17 +226,30 @@ def _prepare_selected_input(
     output_work: str,
     source_format: str,
     item_name: str,
-) -> str:
+) -> str | None:
     safe_name = os.path.basename(item_name)
     output_path = os.path.join(output_work, safe_name)
-    if os.path.isfile(output_path):
-        return safe_name
-    if source_format not in {"raw", "sparse"}:
-        return safe_name
     source_path = os.path.join(runtime.work_path, safe_name)
-    if os.path.isfile(source_path):
-        os.makedirs(output_work, exist_ok=True)
+    if not os.path.isfile(source_path):
+        return None
+    os.makedirs(output_work, exist_ok=True)
+    if os.path.abspath(source_path) != os.path.abspath(output_path):
         shutil.copy2(source_path, output_path)
+    if is_dat_family(source_format):
+        basename = safe_name.split(".")[0]
+        for suffix in (".transfer.list", ".patch.dat"):
+            companion_name = basename + suffix
+            companion_source = os.path.join(runtime.work_path, companion_name)
+            companion_output = os.path.join(output_work, companion_name)
+            if (
+                os.path.isfile(companion_source)
+                and os.path.abspath(companion_source)
+                != os.path.abspath(companion_output)
+            ):
+                shutil.copy2(
+                    companion_source,
+                    companion_output,
+                )
     return safe_name
 
 
@@ -286,6 +272,23 @@ def convert_selection(
             source_format=selection.from_format,
             item_name=item_name,
         )
+        if prepared_name is None:
+            runtime.output.log(
+                message(
+                    "file_not_found",
+                    "File not found: {item}",
+                    item=os.path.join(runtime.work_path, os.path.basename(item_name)),
+                )
+            )
+            results.append(
+                ConvertResult(
+                    item_name=os.path.basename(item_name),
+                    source_format=selection.from_format,
+                    target_format=selection.to_format,
+                    succeeded=False,
+                )
+            )
+            continue
         runtime.output.log(
             f"[{selection.from_format}->{selection.to_format}]{prepared_name}"
         )

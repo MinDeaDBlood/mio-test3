@@ -78,6 +78,7 @@ class ProjectWorkspaceHost:
             action_panel=action_panel,
         )
         self._workspace = workspace
+        self._window.notepad.invalidate_focusability(self._window.tab2)
         timeline.log(logger=logging)
         return workspace
 
@@ -89,7 +90,12 @@ class ProjectWorkspaceHost:
 
     def handle_tab_changed(self, _event: Any = None):
         try:
-            selected = self._window.notepad.select()
+            selection_target = getattr(self._window.notepad, "selection_target", None)
+            selected = (
+                selection_target()
+                if callable(selection_target)
+                else self._window.notepad.select()
+            )
         except Exception:
             logging.exception("Cannot read the selected main tab")
             return None
@@ -99,7 +105,7 @@ class ProjectWorkspaceHost:
 
     def install(self) -> None:
         self._window.notepad.bind(
-            "<<NotebookTabChanged>>",
+            "<<NotebookTabChanging>>",
             self.handle_tab_changed,
             add="+",
         )

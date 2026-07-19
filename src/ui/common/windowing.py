@@ -2,17 +2,30 @@ from __future__ import annotations
 
 import os
 import tkinter as tk
-from collections.abc import Callable, Iterable
-from tkinter import TclError, Toplevel as TkToplevel, X, ttk
+from tkinter import TclError, Toplevel as TkToplevel
 from typing import Any
 from weakref import ReferenceType, ref
 
-from src.ui.common import windowing_keys as keys
-from src.ui.common.window_appearance import register_window
-from src.ui.localization import LocalizationCatalog
-
+from src.ui.common.window_controls import CustomControls
+from src.ui.common.window_appearance import current_window_alpha, register_window
+from src.ui.common.window_paint import (
+    paint_window_now,
+    set_native_window_alpha,
+    set_native_window_cloaked,
+    stage_window_offscreen,
+)
+from src.ui.common.titlebar import set_title_bar_color
 
 _MAIN_WINDOW: ReferenceType[Any] | None = None
+def _flush_desktop_compositor() -> None:
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.dwmapi.DwmFlush()
+    except (AttributeError, OSError):
+        return
 
 
 def register_main_window(window: Any) -> None:
@@ -88,7 +101,12 @@ def resolve_window_owner(master: Any | None = None) -> Any | None:
     return root if _window_exists(root) else None
 
 
-def present_window(window: Any, *, owner: Any | None = None) -> bool:
+def present_window(
+    window: Any,
+    *,
+    owner: Any | None = None,
+    transient: bool = False,
+) -> bool:
     """Place a visible application window above its owner and give it focus."""
     if not _window_exists(window) or not _window_is_visible(window):
         return False
@@ -97,7 +115,7 @@ def present_window(window: Any, *, owner: Any | None = None) -> bool:
     if resolved_owner is window or not _window_is_visible(resolved_owner):
         resolved_owner = None
 
-    if resolved_owner is not None:
+    if transient and resolved_owner is not None:
         try:
             window.transient(resolved_owner)
         except (AttributeError, TclError):
@@ -107,13 +125,6 @@ def present_window(window: Any, *, owner: Any | None = None) -> bool:
         window.lift()
     except (AttributeError, TclError):
         pass
-
-    if os.name == "nt":
-        try:
-            window.attributes("-topmost", True)
-            window.after(100, lambda: _release_temporary_topmost(window))
-        except (AttributeError, TclError):
-            pass
 
     try:
         window.focus_force()
@@ -125,15 +136,6 @@ def present_window(window: Any, *, owner: Any | None = None) -> bool:
     return True
 
 
-def _release_temporary_topmost(window: Any) -> None:
-    if not _window_exists(window):
-        return
-    try:
-        window.attributes("-topmost", False)
-    except (AttributeError, TclError):
-        pass
-
-
 class Toplevel(TkToplevel):
     """Project window with shared ownership, foreground behavior and centering."""
 
@@ -143,35 +145,207 @@ class Toplevel(TkToplevel):
         *,
         center_on_open: bool = True,
         focus_on_open: bool = True,
+        auto_show: bool = True,
         **kwargs: Any,
     ) -> None:
         owner = resolve_window_owner(master)
         super().__init__(master=master, **kwargs)
+        # A native Toplevel starts life visible. Keep it withdrawn until the
+        # subclass has built its complete widget tree; otherwise any layout or
+        # DWM flush performed during construction can expose the system's light
+        # client background for a frame.
+        TkToplevel.withdraw(self)
         self._window_owner = owner
+        self._transient_owner_enabled = master is not None
+        self._transient_owner_attached = False
+        self._center_on_open = center_on_open
         self._focus_on_open = focus_on_open
+        self._auto_show = auto_show
         self._centered_once = False
+        self._initial_show_scheduled = False
+        self._initial_show_in_progress = False
+        self._initial_show_complete = False
+        self._initial_show_generation = 0
         self._foreground_scheduled = False
         self._foreground_presented = False
         register_window(self)
 
-        if owner is not None and owner is not self and _window_is_visible(owner):
-            try:
-                self.transient(owner)
-            except TclError:
-                pass
-
         self.bind("<Map>", self._on_window_mapped, add="+")
-        if center_on_open:
-            self.center_after_layout()
-        if focus_on_open:
-            self._schedule_foreground_presentation()
+        if auto_show:
+            self._schedule_initial_show()
+
+    def _schedule_initial_show(self) -> None:
+        if (
+            self._initial_show_scheduled
+            or self._initial_show_in_progress
+            or self._initial_show_complete
+        ):
+            return
+        self._initial_show_scheduled = True
+        # Timer callbacks are deliberately used instead of after_idle:
+        # update_idletasks() may run idle callbacks from inside a constructor.
+        try:
+            self.after(0, self._show_when_ready)
+        except TclError:
+            self._initial_show_scheduled = False
+
+    def _show_when_ready(self) -> None:
+        self._initial_show_scheduled = False
+        if (
+            self._initial_show_complete
+            or self._initial_show_in_progress
+            or not _window_exists(self)
+        ):
+            return
+        self._initial_show_in_progress = True
+        self._initial_show_generation += 1
+        generation = self._initial_show_generation
+
+        # On Windows, assigning ``wm transient`` to an already mapped Tk
+        # window replaces its outer TkTopLevel HWND.  That discarded the
+        # transparent, fully painted wrapper and briefly exposed a fresh white
+        # one.  Establish native ownership while still withdrawn so the first
+        # mapped HWND is also the final HWND.
+        try:
+            transient_enabled = bool(self._transient_owner_enabled)
+            transient_owner = self._window_owner
+        except AttributeError:
+            transient_enabled = False
+            transient_owner = None
+        if transient_enabled and _window_exists(transient_owner):
+            try:
+                self.transient(transient_owner)
+                self._transient_owner_attached = True
+            except (AttributeError, TclError):
+                self._transient_owner_attached = False
+
+        # register_window is idempotent and now themes the children that were
+        # created after the base Toplevel constructor returned.
+        try:
+            register_window(self)
+            if self._center_on_open and not self._centered_once:
+                self.center_on_screen()
+        except (RuntimeError, TclError):
+            self._abort_initial_show(generation)
+            return
+        gated = False
+        target_geometry = None
+        if os.name == "nt":
+            try:
+                # Alpha/cloak support differs between Windows builds. Mapping
+                # the real, fully themed window off-screen is the reliable
+                # fallback: incomplete native paints never reach the desktop.
+                target_geometry = stage_window_offscreen(self)
+                # A mapped Tk window needs at least one display-idle pass before
+                # Windows has a complete client surface.  Keep that first native
+                # frame fully transparent instead of exposing the class brush.
+                self.attributes("-alpha", 0.0)
+                set_native_window_alpha(self, 0.0)
+                set_native_window_cloaked(self, True)
+                self._appearance_alpha_gated = True
+                gated = True
+            except TclError:
+                gated = False
+            set_title_bar_color(self, True)
+        try:
+            TkToplevel.deiconify(self)
+            if gated:
+                set_native_window_alpha(self, 0.0)
+            set_title_bar_color(self, True)
+            # Drain layout/native paint only; application timers stay queued
+            # until the window has been revealed to the normal main loop.
+            if not paint_window_now(self, max_tk_events=48):
+                self._abort_initial_show(generation)
+                return
+            if target_geometry is not None:
+                self.geometry(target_geometry)
+                if gated:
+                    set_native_window_alpha(self, 0.0)
+                if getattr(self, '_repaint_after_move', False):
+                    if not paint_window_now(
+                        self, max_tk_events=24, max_native_messages=256
+                    ):
+                        self._abort_initial_show(generation)
+                        return
+                else:
+                    self.update_idletasks()
+        except TclError:
+            self._abort_initial_show(generation)
+            return
+        if not _window_exists(self):
+            self._abort_initial_show(generation)
+            return
+        self._finish_initial_show(generation)
+
+    def _finish_initial_show(self, generation: int | None = None) -> None:
+        generation = self._initial_show_generation if generation is None else generation
+        if generation != self._initial_show_generation:
+            return
+        if self._initial_show_complete or not _window_exists(self):
+            if not self._initial_show_complete:
+                self._abort_initial_show(generation)
+            return
+        try:
+            if self._focus_on_open:
+                # Native ownership was fixed while withdrawn; only foreground
+                # activation is deferred until the hidden client paint is done.
+                self.present_in_foreground()
+                if not _window_exists(self):
+                    self._abort_initial_show(generation)
+                    return
+            target_alpha = current_window_alpha()
+            self.attributes("-alpha", target_alpha)
+            set_native_window_alpha(self, target_alpha)
+            set_native_window_cloaked(self, False)
+            _flush_desktop_compositor()
+        except (RuntimeError, TclError):
+            self._abort_initial_show(generation)
+            return
+        self._appearance_alpha_gated = False
+        self._initial_show_in_progress = False
+        self._initial_show_complete = True
+
+    def _abort_initial_show(self, generation: int) -> None:
+        if generation != self._initial_show_generation:
+            return
+        self._initial_show_generation += 1
+        self._initial_show_scheduled = False
+        self._initial_show_in_progress = False
+        if _window_exists(self):
+            try:
+                TkToplevel.withdraw(self)
+                target_alpha = current_window_alpha()
+                self.attributes("-alpha", target_alpha)
+                set_native_window_alpha(self, target_alpha)
+                set_native_window_cloaked(self, False)
+            except (AttributeError, TclError):
+                pass
+        self._appearance_alpha_gated = False
+
+    def deiconify(self) -> None:
+        if not self._initial_show_complete:
+            if self._auto_show:
+                self._schedule_initial_show()
+            elif not self._initial_show_in_progress:
+                # Manually controlled windows (currently the startup splash)
+                # still need the same first-Map gate.  They are expected to be
+                # ready when deiconify() returns, so finish their one paint
+                # synchronously instead of waiting for the normal timer.
+                self._show_when_ready()
+                if self._initial_show_in_progress:
+                    self._finish_initial_show(self._initial_show_generation)
+            return
+        TkToplevel.deiconify(self)
+
+    wm_deiconify = deiconify
 
     def _on_window_mapped(self, event: tk.Event) -> None:
         # Tk can deliver descendant widget map events through the toplevel bind tag.
         # Only the actual window map event may trigger foreground presentation.
         if event.widget is not self:
             return
-        self._schedule_foreground_presentation()
+        if self._initial_show_complete:
+            self._schedule_foreground_presentation()
 
     def _schedule_foreground_presentation(self) -> None:
         if (
@@ -181,7 +355,7 @@ class Toplevel(TkToplevel):
         ):
             return
         self._foreground_scheduled = True
-        self.after_idle(self._present_scheduled_window)
+        self.after(0, self._present_scheduled_window)
 
     def _present_scheduled_window(self) -> None:
         self._foreground_scheduled = False
@@ -190,11 +364,20 @@ class Toplevel(TkToplevel):
     def present_in_foreground(self, *, force: bool = False) -> None:
         if self._foreground_presented and not force:
             return
-        if present_window(self, owner=self._window_owner):
+        if present_window(
+            self,
+            owner=self._window_owner,
+            transient=False,
+        ):
             self._foreground_presented = True
 
     def center_after_layout(self, *, force: bool = False) -> None:
-        self.after_idle(lambda: self.center_on_screen(force=force))
+        if not self._initial_show_complete:
+            self._center_on_open = True
+            if force:
+                self._centered_once = False
+            return
+        self.after(0, lambda: self.center_on_screen(force=force))
 
     def center_on_screen(self, *, force: bool = False) -> None:
         if self._centered_once and not force:
@@ -206,77 +389,6 @@ class Toplevel(TkToplevel):
         except (TclError, RuntimeError):
             return
         self._centered_once = True
-
-
-class CustomControls:
-    def __init__(
-        self,
-        *,
-        texts: LocalizationCatalog,
-        choose_file: Callable[[], str],
-        choose_directory: Callable[[], str],
-    ) -> None:
-        self._texts = texts
-        self._choose_file = choose_file
-        self._choose_directory = choose_directory
-
-    def filechose(
-        self,
-        master: tk.Misc,
-        textvariable: tk.Variable,
-        text: str,
-        *,
-        is_folder: bool = False,
-        browse_text: str | None = None,
-    ) -> ttk.Frame:
-        frame = ttk.Frame(master)
-        frame.pack(fill=X)
-        ttk.Label(
-            frame,
-            text=text,
-            width=15,
-            font=("TkDefaultFont", 12),
-        ).pack(side="left", padx=10, pady=10)
-        ttk.Entry(frame, textvariable=textvariable).pack(
-            side="left",
-            padx=5,
-            pady=5,
-        )
-        chooser = self._choose_directory if is_folder else self._choose_file
-        ttk.Button(
-            frame,
-            text=browse_text
-            or self._texts.resolve_required_ui_text(keys.COMMON_WINDOWING_BROWSE),
-            command=lambda: textvariable.set(chooser()),
-        ).pack(side="left", padx=10, pady=10)
-        return frame
-
-    @staticmethod
-    def combobox(
-        master: tk.Misc,
-        textvariable: tk.Variable,
-        values: Iterable[str],
-        text: str,
-    ) -> ttk.Combobox:
-        frame = ttk.Frame(master)
-        frame.pack(fill=X)
-        ttk.Label(
-            frame,
-            text=text,
-            width=15,
-            font=("TkDefaultFont", 12),
-        ).pack(side="left", padx=10, pady=10)
-        combo = ttk.Combobox(
-            frame,
-            textvariable=textvariable,
-            values=tuple(values),
-            state="readonly",
-        )
-        combo.pack(side="left", padx=5, pady=5)
-        combo_values = tuple(combo["values"])
-        if combo_values and not textvariable.get():
-            textvariable.set(combo_values[0])
-        return combo
 
 
 __all__ = [

@@ -38,6 +38,13 @@ class PluginManagerController:
     def load_catalog(self):
         return self.catalog_service.load()
 
+    def load_catalog_async(self, *, on_success, on_error=None):
+        return self.runtime.task_runner.run(
+            self.catalog_service.load,
+            on_success=on_success,
+            on_error=on_error,
+        )
+
     def plugin_config_path(self, plugin_id: str) -> str | None:
         return self.plugin_gateway.plugin_config_path(plugin_id)
 

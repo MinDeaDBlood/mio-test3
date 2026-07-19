@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
-from contextlib import ExitStack, contextmanager
 from tkinter import TclError
 from typing import Any, Protocol, cast
 from weakref import WeakSet
@@ -11,24 +9,13 @@ from weakref import WeakSet
 from src.ui.common.themes.identifiers import DARK_THEME, require_theme_id
 from src.ui.common.themes.native_palette import apply_native_theme, get_theme_palette
 from src.ui.common.titlebar import TitlebarWindowProtocol, set_title_bar_color
-from src.ui.common.window_redraw import suspend_window_redraw
 
 
 class AppearanceWindowProtocol(TitlebarWindowProtocol, Protocol):
     def winfo_exists(self) -> int: ...
     def attributes(self, *args: object) -> object: ...
     def configure(self, **kwargs: object) -> object: ...
-    def bind(
-        self,
-        sequence: str,
-        func: Callable[[object], object],
-        add: str | None = None,
-    ) -> object: ...
-    def after_idle(self, func: Callable[[], object]) -> object: ...
-
-
 _WINDOWS: WeakSet[AppearanceWindowProtocol] = WeakSet()
-_BOUND_WINDOWS: WeakSet[AppearanceWindowProtocol] = WeakSet()
 _THEME_ID = DARK_THEME
 _WINDOW_ALPHA = 1.0
 _MIN_ALPHA = 0.55
@@ -56,9 +43,9 @@ def resolve_transparency_alpha(
     return normalize_window_alpha(effect_alpha) if enabled else 1.0
 
 
-def _window_exists(window: AppearanceWindowProtocol) -> bool:
+def _window_exists(window: object) -> bool:
     try:
-        return bool(window.winfo_exists())
+        return bool(cast(Any, window).winfo_exists())
     except (AttributeError, TclError):
         return False
 
@@ -76,22 +63,23 @@ def _apply_to_window(
         return
     palette = get_theme_palette(_THEME_ID)
     try:
-        set_title_bar_color(window, True)
-    except (AttributeError, OSError, TclError, TypeError, ValueError):
-        pass
-    try:
         window.configure(background=palette.window_background)
     except (AttributeError, TclError):
         pass
-    try:
-        window.attributes("-alpha", _WINDOW_ALPHA)
-    except (AttributeError, TclError):
-        pass
+    if not bool(getattr(window, "_appearance_alpha_gated", False)):
+        try:
+            window.attributes("-alpha", _WINDOW_ALPHA)
+        except (AttributeError, TclError):
+            pass
     if include_widget_tree:
         try:
             apply_native_theme(window, _THEME_ID)
         except (AttributeError, TclError, TypeError):
             pass
+    try:
+        set_title_bar_color(window, True)
+    except (AttributeError, OSError, TclError, TypeError, ValueError):
+        pass
 
 
 def register_window(window: object) -> None:
@@ -104,37 +92,6 @@ def register_window(window: object) -> None:
         return
 
     _apply_to_window(typed_window)
-    if typed_window in _BOUND_WINDOWS:
-        return
-    try:
-        _BOUND_WINDOWS.add(typed_window)
-
-        def apply_after_map(event: Any) -> None:
-            if event.widget is typed_window:
-                _apply_to_window(typed_window)
-
-        typed_window.bind("<Map>", apply_after_map, add="+")
-        typed_window.bind(
-            "<FocusIn>",
-            lambda _event: _apply_to_window(
-                typed_window,
-                include_widget_tree=False,
-            ),
-            add="+",
-        )
-        typed_window.after_idle(lambda: _apply_to_window(typed_window))
-    except (AttributeError, TclError):
-        return
-
-
-@contextmanager
-def suspend_registered_window_redraw() -> Iterator[None]:
-    """Hide intermediate layout and colour states during a UI transaction."""
-
-    with ExitStack() as stack:
-        for window in _registered_windows():
-            stack.enter_context(suspend_window_redraw(window))
-        yield
 
 
 def apply_theme_to_windows(theme_id: str) -> None:
@@ -178,5 +135,4 @@ __all__ = [
     "normalize_window_alpha",
     "register_window",
     "resolve_transparency_alpha",
-    "suspend_registered_window_redraw",
 ]

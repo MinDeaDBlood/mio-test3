@@ -76,6 +76,9 @@ def compose_main_window(window) -> MainWindowComposition:
         bind_output_streams=_bind_output_streams,
         dnd_files=DND_FILES,
     )
+    refresh_focusability = getattr(window.notepad, "refresh_focusability", None)
+    if callable(refresh_focusability):
+        refresh_focusability()
     fit_main_window_to_content(window)
     for warning in startup_warnings:
         logging.warning("%s", warning.message)

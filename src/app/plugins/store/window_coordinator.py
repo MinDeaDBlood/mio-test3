@@ -59,10 +59,12 @@ class PluginStoreWindowController:
     def open(self) -> None:
         self.session.open()
         self.session.ensure_background_plugin_load()
-        self.init_repo()
         self._build_layout()
-        self.request_db_refresh()
         self._center_window()
+        # Loading ``requests`` and composing the repository service is cold
+        # startup work.  Run it together with the first fetch in the existing
+        # background task so the ready dark window can be revealed promptly.
+        self.fetch_controller.request_initial_refresh(self.init_repo)
         if self._timeline is not None:
             self._timeline.log(logger=self.logger)
 

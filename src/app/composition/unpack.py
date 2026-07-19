@@ -16,6 +16,7 @@ from src.core.file_types import gettype
 from src.core.byte_size import format_bytes
 from src.core.json_store import JsonEdit
 from src.logic.projects.unpack.workflow.service import unpack
+from src.logic.projects.unpack.runtime_context import build_workflow_runtime_context
 from src.logic.projects.unpack.workspace_service import UnpackWorkspaceService
 from src.app.composition.partition_pack import open_partition_pack
 from src.ui.tabs.project.unpack.info_dialog import show_unpack_image_info_dialog
@@ -29,13 +30,35 @@ def create_unpack_view(*, project_runtime):
         project_manager=project_runtime.project_manager,
         current_project_name=project_runtime.current_project_name,
         start_worker=start_background_job,
-        output=build_ui_service_output(
-            texts=lang, notify=project_runtime.notifier.show
-        ),
+    )
+
+    def notify_on_ui_thread(**kwargs):
+        return ui_runtime.dispatcher.dispatch(
+            lambda: project_runtime.notifier.show(**kwargs)
+        )
+
+    workflow_output = build_ui_service_output(
+        texts=lang,
+        notify=notify_on_ui_thread,
     )
 
     def dispatch_unpack(chosen, form=""):
-        return unpack(chosen, form, runtime=ui_runtime.workflow_runtime)
+        # Project selection can change after the Projects tab was created.  Build
+        # the workflow paths at the moment the user starts the operation instead
+        # of retaining the initial (and often empty) project paths.
+        manager = ui_runtime.project_manager
+        settings = ui_runtime.settings
+        workflow_runtime = build_workflow_runtime_context(
+            input_path=manager.current_input_path(),
+            work_path=manager.current_work_path(),
+            output_path=manager.current_work_output_path(),
+            project_selected=manager.exist(),
+            tool_bin=settings.tool_bin,
+            magisk_not_decompress=settings.magisk_not_decompress,
+            boot_skip_ramdisk=settings.boot_skip_ramdisk,
+            output=workflow_output,
+        )
+        return unpack(chosen, form, runtime=workflow_runtime)
 
     def open_pack_partitions(selected):
         return open_partition_pack(selected)

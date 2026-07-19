@@ -41,15 +41,19 @@ def _inspect_existing_image(path: str) -> ImageSizeInfo:
     )
 
 
-def _require_image_path(work: str, part: str) -> str:
-    image_path = _image_path(work, part)
-    if not os.path.exists(image_path):
-        raise FileNotFoundError(f'pack.super.image_missing: part={part}; image_path={image_path}')
-    return image_path
+def _require_image_path(sources: tuple[str, ...], part: str) -> str:
+    for source in sources:
+        for candidate in (part, f'{part}_a'):
+            image_path = _image_path(source, candidate)
+            if os.path.exists(image_path):
+                return image_path
+    raise FileNotFoundError(
+        f'pack.super.image_missing: part={part}; sources={sources}'
+    )
 
 
-def _require_image_info(work: str, part: str) -> ImageSizeInfo:
-    return _inspect_existing_image(_require_image_path(work, part))
+def _require_image_info(sources: tuple[str, ...], part: str) -> ImageSizeInfo:
+    return _inspect_existing_image(_require_image_path(sources, part))
 
 
 def _require_paths(work: str | None, output_dir: str | None) -> tuple[str, str]:
@@ -58,29 +62,21 @@ def _require_paths(work: str | None, output_dir: str | None) -> tuple[str, str]:
     return work, output_dir
 
 
-def _normalize_slot_a_images(work: str, part_list: Iterable[str]) -> None:
-    for part in part_list:
-        source_img = _image_path(work, part)
-        slot_a_img = _image_path(work, f'{part}_a')
-        if not os.path.exists(source_img) and os.path.exists(slot_a_img):
-            try:
-                os.rename(slot_a_img, source_img)
-            except OSError:
-                logging.exception('pack.super.normalize_slot_failed: part=%s; source=%s; slot_a=%s', part, source_img, slot_a_img)
-
-
-def _build_partition_infos(*, work: str, part_list: list[str], super_type: int, group_name: str, attrib: str) -> tuple[PartitionImageInfo, ...]:
+def _build_partition_infos(*, sources: tuple[str, ...], part_list: list[str], super_type: int, group_name: str, attrib: str) -> tuple[PartitionImageInfo, ...]:
     infos: list[PartitionImageInfo] = []
     if super_type == 1:
         for part in part_list:
-            infos.append(PartitionImageInfo(partition_name=part, image_name=part, image=_require_image_info(work, part), group_name=group_name, attributes=attrib))
+            infos.append(PartitionImageInfo(partition_name=part, image_name=part, image=_require_image_info(sources, part), group_name=group_name, attributes=attrib))
         return tuple(infos)
 
     for part in part_list:
-        infos.append(PartitionImageInfo(partition_name=f'{part}_a', image_name=part, image=_require_image_info(work, part), group_name=f'{group_name}_a', attributes=attrib))
+        infos.append(PartitionImageInfo(partition_name=f'{part}_a', image_name=part, image=_require_image_info(sources, part), group_name=f'{group_name}_a', attributes=attrib))
     for part in part_list:
-        slot_b_path = _image_path(work, f'{part}_b')
-        slot_b_info = _inspect_existing_image(slot_b_path) if os.path.exists(slot_b_path) else None
+        slot_b_path = next(
+            (path for source in sources if os.path.exists(path := _image_path(source, f'{part}_b'))),
+            None,
+        )
+        slot_b_info = _inspect_existing_image(slot_b_path) if slot_b_path else None
         infos.append(PartitionImageInfo(partition_name=f'{part}_b', image_name=f'{part}_b', image=slot_b_info, group_name=f'{group_name}_b', attributes=attrib))
     return tuple(infos)
 
@@ -212,15 +208,22 @@ def pack_super(
     work: str | None = None,
     block_device_name: str = 'None',
     return_result: bool = False,
+    source_dirs: Iterable[str] | None = None,
 ):
     if not block_device_name or block_device_name == 'None':
         block_device_name = 'super'
     work, output_dir = _require_paths(work, output_dir)
+    sources = tuple(
+        dict.fromkeys(
+            os.path.abspath(path)
+            for path in (work, *(source_dirs or ()))
+            if path
+        )
+    )
     part_list = _normalize_part_list(part_list)
-    _normalize_slot_a_images(work, part_list)
 
     output_super_path = os.path.join(output_dir, 'super.img')
-    partitions = _build_partition_infos(work=work, part_list=part_list, super_type=int(super_type), group_name=group_name, attrib=attrib)
+    partitions = _build_partition_infos(sources=sources, part_list=part_list, super_type=int(super_type), group_name=group_name, attrib=attrib)
     _validate_requested_size(size, partitions)
     _log_pack_plan(work=work, output_dir=output_dir, sparse=sparse, block_device_name=block_device_name, group_name=group_name, size=size, super_type=int(super_type), partitions=partitions)
     command = _build_lpmake_command(

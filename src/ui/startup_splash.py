@@ -43,6 +43,7 @@ class StartupSplash:
             main_window,
             center_on_open=False,
             focus_on_open=False,
+            auto_show=False,
         )
         self._window.withdraw()
         self._window.overrideredirect(True)
@@ -83,25 +84,42 @@ class StartupSplash:
         self._window.geometry(f'{width}x{height}+{x}+{y}')
         self._main_window.withdraw()
         self._window.deiconify()
-        self._window.lift()
-        self._window.update_idletasks()
-        self._window.update()
+        # Toplevel.deiconify() performs the complete gated native paint.
+        # Re-lifting and running a second full update here invalidated the
+        # already visible splash and could expose an unpainted startup frame.
         logger.info('Application startup splash displayed: %s', image_path)
 
     def close(self, *, reveal_main: bool = True) -> None:
         try:
-            if self._window.winfo_exists():
-                self._window.destroy()
-        except Exception:
-            logger.exception('Unable to close the application startup splash')
-        finally:
             if reveal_main:
+                from src.ui.common.window_appearance import current_window_alpha
+                from src.ui.common.window_reveal import reveal_window_after_layout
+
                 try:
-                    self._main_window.deiconify()
-                    self._main_window.lift()
-                    self._main_window.update_idletasks()
+                    self._main_window.attributes('-topmost', False)
                 except Exception:
-                    logger.exception('Unable to reveal the main window after startup')
+                    logger.debug('Unable to clear startup topmost state before reveal')
+                reveal_window_after_layout(
+                    self._main_window,
+                    target_alpha=current_window_alpha(),
+                    focus=True,
+                )
+        except Exception:
+            logger.exception('Unable to reveal the main window after startup')
+        finally:
+            try:
+                if self._window.winfo_exists():
+                    self._window.destroy()
+            except Exception:
+                logger.exception('Unable to close the application startup splash')
+            # Some Tk/Windows combinations promote the owner alongside an
+            # owned topmost splash.  Never let that temporary startup flag leak
+            # onto the application root and cover the wizard or later tools.
+            if not reveal_main:
+                try:
+                    self._main_window.attributes('-topmost', False)
+                except Exception:
+                    logger.debug('Unable to clear startup topmost state')
         logger.info(
             'Application startup splash closed: reveal_main=%s',
             reveal_main,

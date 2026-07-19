@@ -45,6 +45,7 @@ class MpkMan(ttk.Frame):
         self.images_: dict[str, object] = {}
         self.catalog = PluginManagerCatalogPresenter(self, logger=logging)
         self._plugin_event_binding: ClosableBinding | None = None
+        self._catalog_generation = 0
 
     def message_pop(self, *args, **kwargs):
         return self.host_window.message_pop(*args, **kwargs)
@@ -61,11 +62,25 @@ class MpkMan(ttk.Frame):
             self.controller.run_plugin(plugin_id, values)
 
     def list_plugins(self):
-        self.catalog.render(self.controller.load_catalog())
+        return self.refresh()
 
     def refresh(self):
-        self.catalog.clear()
-        self.list_plugins()
+        self._catalog_generation += 1
+        generation = self._catalog_generation
+        return self.controller.load_catalog_async(
+            on_success=lambda result: self._apply_catalog(generation, result),
+            on_error=lambda error: self._handle_catalog_error(generation, error),
+        )
+
+    def _apply_catalog(self, generation: int, result) -> None:
+        if generation != self._catalog_generation or not self.winfo_exists():
+            return
+        self.catalog.render(result)
+
+    def _handle_catalog_error(self, generation: int, error: Exception) -> None:
+        if generation != self._catalog_generation or not self.winfo_exists():
+            return
+        logging.error("Plugin catalog loading failed: %s", error)
 
     def popup(self, name, event):
         self.chosen.set(name)
@@ -150,7 +165,6 @@ class MpkMan(ttk.Frame):
 
     def gui(self):
         self.bind("<Destroy>", self._on_destroy, add="+")
-        self.controller.ensure_background_load()
 
         header = ttk.Frame(self)
         header.pack(fill=X)
@@ -208,7 +222,11 @@ class MpkMan(ttk.Frame):
             label=self._texts.resolve_required_ui_text(keys.PLUGINS_MANAGER_WINDOW_EDIT),
             command=lambda: self.edit_plugin(self.chosen.get()),
         )
-        self.list_plugins()
+        # The real page is complete before any filesystem/catalog work starts.
+        # Catalog I/O returns through the UI dispatcher and never delays the
+        # first painted Plugins frame.
+        self.refresh()
+        self.controller.ensure_background_load()
 
 
 __all__ = ["MpkMan"]

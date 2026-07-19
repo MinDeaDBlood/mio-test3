@@ -137,7 +137,14 @@ class ListBox(Frame):
                 self.selected.remove(value)
         self.var.set(True if all(i.get() for i in self.vars) else False)
 
-    def insert(self, text: str = "", value: str = "", state=False):
+    def insert(
+        self,
+        text: str = "",
+        value: str = "",
+        state=False,
+        *,
+        refresh: bool = True,
+    ):
         if value in self.loaded_value:
             return
         self.loaded_value.append(value)
@@ -152,7 +159,8 @@ class ListBox(Frame):
             self.__set_value(var, value)
         self.controls.append(c)
         c.pack(anchor="nw", fill="y", padx=5, pady=3)
-        self.update_ui()
+        if refresh:
+            self.update_ui()
 
 
 class ScrollFrame(Frame):

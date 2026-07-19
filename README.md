@@ -48,7 +48,9 @@
 
 ***
 ## Localization
-### [日本語](https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE/blob/main/docs/readmes/README_ja-JP.md) | [中文](https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE/blob/main/docs/readmes/README_zh-CN.md) | [Português brasileiro](https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE/blob/main/docs/readmes/README_pt-BR.md) | [Deutsch](https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE/blob/main/docs/readmes/README_de-DE.md) | [Русский язык](https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE/blob/main/docs/readmes/README_ru-RU.md) | [Indonesian](https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE/blob/main/docs/readmes/README_id-ID.md) | [Tiếng Việt](https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE/blob/main/docs/readmes/README_vi-VN.md)
+### [Current English documentation](docs/en/README.md) | [Актуальная русская документация](docs/ru/README.md)
+
+Legacy community README translations are preserved in `docs/archive/readmes`.
 ***
 ## Features
 * Unpack `boot, dtbo, ext4, erofs, payload, logo` and so on
@@ -117,7 +119,7 @@ python3 config chksupd
 
 ## Documentation
 
-The documentation index is available at `docs/README.md`. Tests, scripts, Ruff and Mypy are described in `docs/development/tests_and_scripts.md`.
+The bilingual documentation index is available at `docs/README.md`. Tests, scripts, Ruff, and Mypy are described in `docs/en/development/tests_and_scripts.md` and `docs/ru/development/tests_and_scripts.md`.
 
 ## Quality checks
 
@@ -129,11 +131,11 @@ python scripts/arch_guard/main.py
 python scripts/manual/manual_unit_contracts.py
 ```
 
-The typed boundary check validates Plugin Store models, dynamic plugin metadata, application ports, Tk scheduling and background task contracts. See `docs/architecture/typed_boundaries.md` for the exact boundary rules.
+The typed boundary check validates Plugin Store models, dynamic plugin metadata, application ports, Tk scheduling, and background task contracts. See `docs/en/architecture/typed_boundaries.md` for the boundary rules.
 
 ## Start To Use
 > [!NOTE]
-> Currently Only Support Python 3.8 and Newer!
+> Python 3.10 or newer is required by `tool.py`.
 ### Prerequisites
 <details><summary>macOS</summary>
 

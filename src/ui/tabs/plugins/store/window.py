@@ -34,7 +34,7 @@ class MpkStore(Toplevel):
     label_frame_id: int
 
     def __init__(self, *, texts: LocalizationCatalog) -> None:
-        super().__init__()
+        super().__init__(auto_show=False)
         self.texts = texts
         self.title(texts.resolve_required_ui_text(keys.WINDOW_TITLE))
         self.minsize(500, 400)
@@ -53,6 +53,7 @@ class MpkStore(Toplevel):
 
     def open(self) -> None:
         self._require_controller().open()
+        self.deiconify()
 
     def start_download_async(
         self,

@@ -34,6 +34,7 @@ class WelcomeControllerPort(Protocol):
     def read_private_notice(self) -> str: ...
     def initial_step(self) -> int: ...
     def persist_step(self, step: int) -> int: ...
+    def clamp_step(self, step: int) -> int: ...
 
 
 class WelcomeActionsPort(Protocol):
@@ -53,6 +54,8 @@ class WelcomeViewPort(Protocol):
     texts: LocalizationCatalog
     fonts: WelcomeFonts
     content_wrap_width: int
+
+    def apply_selected_language(self) -> None: ...
 
 
 __all__ = [

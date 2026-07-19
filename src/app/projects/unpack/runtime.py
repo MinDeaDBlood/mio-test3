@@ -18,8 +18,6 @@ from src.app.ui_feedback import (
     build_ui_dispatcher,
 )
 from src.app.ui_tasks import UiTaskRunner, build_ui_task_runner
-from src.logic.common.service_output import ServiceOutput, build_service_output
-from src.logic.projects.unpack.runtime_context import build_workflow_runtime_context
 
 
 def _host_is_alive(host_window) -> bool:
@@ -59,7 +57,6 @@ class UnpackViewRuntimeContext:
     message_pop: Callable[..., Any]
     dispatcher: UiDispatcher
     task_runner: UiTaskRunner
-    workflow_runtime: object
 
 
 def build_unpack_view_runtime_context(
@@ -71,7 +68,6 @@ def build_unpack_view_runtime_context(
     animation=None,
     message_pop=None,
     start_worker=None,
-    output: ServiceOutput | None = None,
 ) -> UnpackViewRuntimeContext:
     resolved_host_window = resolve_ui_host_window(host_window)
     resolved_project_manager = resolve_project_manager(project_manager)
@@ -89,16 +85,6 @@ def build_unpack_view_runtime_context(
         is_alive=lambda: _host_is_alive(resolved_host_window),
         start_worker=start_worker,
     )
-    workflow_runtime = build_workflow_runtime_context(
-        input_path=resolved_project_manager.current_input_path(),
-        work_path=resolved_project_manager.current_work_path(),
-        output_path=resolved_project_manager.current_work_output_path(),
-        project_selected=resolved_project_manager.exist(),
-        tool_bin=resolved_settings.tool_bin,
-        magisk_not_decompress=resolved_settings.magisk_not_decompress,
-        boot_skip_ramdisk=resolved_settings.boot_skip_ramdisk,
-        output=output or build_service_output(),
-    )
     return UnpackViewRuntimeContext(
         host_window=resolved_host_window,
         project_manager=resolved_project_manager,
@@ -108,7 +94,6 @@ def build_unpack_view_runtime_context(
         message_pop=resolved_message_pop,
         dispatcher=dispatcher,
         task_runner=task_runner,
-        workflow_runtime=workflow_runtime,
     )
 
 

@@ -101,7 +101,9 @@ def build_app_convert_context(
 ) -> ConvertRuntimeContext:
     project_manager = resolve_project_manager()
     return build_convert_runtime_context(
-        work_path=project_manager.current_work_path(),
+        # Conversion reads immutable source images from input and performs all
+        # mutations in output.
+        work_path=project_manager.current_input_path(),
         output_path=project_manager.current_work_output_path(),
         output=output or build_service_output(),
     )
@@ -109,9 +111,10 @@ def build_app_convert_context(
 
 def build_app_pack_super_context() -> PackSuperRuntimeContext:
     project_manager = resolve_project_manager()
+    output_path = project_manager.current_work_output_path()
     return build_pack_super_runtime_context(
-        work_path=project_manager.current_work_path(),
-        output_path=project_manager.current_work_output_path(),
+        work_path=output_path,
+        output_path=output_path,
     )
 
 

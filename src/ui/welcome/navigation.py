@@ -3,15 +3,11 @@ from __future__ import annotations
 from src.ui.localization import LocalizationCatalog
 from src.ui.welcome import navigation_keys as keys
 from src.ui.welcome.layout import (
-    WELCOME_PAGE_LAYOUTS,
     WelcomeContentProtocol,
-    WelcomePageLayout,
     WelcomeWindowProtocol,
     WelcomeWindowSize,
-    compute_content_wrap_width,
     compute_welcome_window_size,
     fit_welcome_window,
-    get_page_layout,
     release_welcome_window,
 )
 from src.ui.welcome.navigation_presenter import WelcomeNavigationLabels
@@ -26,15 +22,11 @@ def get_labels(texts: LocalizationCatalog) -> WelcomeNavigationLabels:
 
 
 __all__ = [
-    "WELCOME_PAGE_LAYOUTS",
-    "WelcomeContentProtocol",
-    "WelcomePageLayout",
-    "WelcomeWindowProtocol",
-    "WelcomeWindowSize",
-    "compute_content_wrap_width",
-    "compute_welcome_window_size",
-    "fit_welcome_window",
-    "get_labels",
-    "get_page_layout",
-    "release_welcome_window",
+    'WelcomeContentProtocol',
+    'WelcomeWindowProtocol',
+    'WelcomeWindowSize',
+    'compute_welcome_window_size',
+    'fit_welcome_window',
+    'get_labels',
+    'release_welcome_window',
 ]

@@ -19,7 +19,6 @@ def prompt_repository_url(
     input_var = StringVar(value=current_value)
     dialog = Toplevel(master=parent)
     dialog.title(title)
-    dialog.transient(parent)
     dialog.grab_set()
 
     ttk.Entry(dialog, textvariable=input_var, width=60).pack(

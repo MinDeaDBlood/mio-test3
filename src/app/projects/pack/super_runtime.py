@@ -15,6 +15,8 @@ class PackSuperWindowRuntime:
     project_manager: Any
     host_window: Any
     work_path: str
+    input_path: str
+    metadata_path: str
     animation: Any
 
 
@@ -24,7 +26,11 @@ def build_pack_super_window_runtime() -> PackSuperWindowRuntime:
     return PackSuperWindowRuntime(
         project_manager=project_manager,
         host_window=host_window,
-        work_path=project_manager.current_work_path(),
+        # Rebuilt images in output have priority.  input is retained as a
+        # fallback for partitions that were extracted but not rebuilt.
+        work_path=project_manager.current_work_output_path(),
+        input_path=project_manager.current_input_path(),
+        metadata_path=project_manager.current_work_path(),
         animation=resolve_animation(),
     )
 
